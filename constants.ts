@@ -46,6 +46,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
       { id: 'g2-10', title: '找红豆', description: '在一堆相似小豆中精准找出红豆', difficulty: 'Medium' },
       { id: 'g2-11', title: '找朋友', description: '在一群小朋友中找到和上面完全一样的那一个！', difficulty: 'Medium' },
       { id: 'g2-12', title: '水果精细家', description: '【精细训练】在密密麻麻的小水果中，数数雪梨有几个？', difficulty: 'Medium' },
+      { id: 'g2-13', title: '临界点训练', description: '在视觉临界点进行反复适应性训练，提升远视力。', difficulty: 'Hard' },
     ]
   },
   {

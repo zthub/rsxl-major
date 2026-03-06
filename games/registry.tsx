@@ -26,6 +26,7 @@ import { DefuseBombGridGame } from './fine-motor/DefuseBombGridGame';
 import { ProtectChicksGame } from './fine-motor/ProtectChicksGame';
 import { FindAvatarGame } from './fine-motor/FindAvatarGame';
 import { FruitPrecisionGame } from './fine-motor/FruitPrecisionGame';
+import { CriticalPointGame } from './fine-motor/CriticalPointGame';
 import { SimultaneousTetrisGame } from './simultaneous/SimultaneousTetrisGame';
 import { SnakeGame } from './simultaneous/SnakeGame';
 import { ColorMatchGame } from './simultaneous/ColorMatchGame';
@@ -68,6 +69,7 @@ export const GameRegistry: Record<string, React.FC<GameComponentProps>> = {
     'g2-10': FindRedBeanGame,   // 找红豆（视觉精细版）
     'g2-11': FindAvatarGame,    // 找朋友（视觉精细版）
     'g2-12': FruitPrecisionGame, // 水果精细家（视觉精细版）
+    'g2-13': CriticalPointGame, // 临界点训练
 
     // Simultaneous
     'g3-1': SimultaneousTetrisGame,
