@@ -23,6 +23,19 @@ const ANIMAL_ICONS = {
     'BUG': Bug
 };
 
+const DEVICE_DISTANCES = {
+    phone: 330,  // 33cm
+    tablet: 400, // 400mm
+    pc: 500      // 500mm
+};
+
+// Standard 1.0 optotype size at 5 meters is 7.27mm
+// For 0.1 optotype size at 5 meters it's ~72.7mm
+const getInitialSizeMm = (deviceType: 'phone' | 'tablet' | 'pc') => {
+    const distance = DEVICE_DISTANCES[deviceType];
+    return 72.7 * (distance / 5000);
+};
+
 export const CriticalPointGame: React.FC<GameComponentProps> = ({
     width,
     height,
@@ -30,6 +43,18 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
     onScore,
     onGameOver
 }) => {
+    // Device detection helper
+    const getDeviceType = useCallback((): 'phone' | 'tablet' | 'pc' => {
+        const ua = navigator.userAgent;
+        const isTablet = /(ipad|tablet|playbook|silk)|(android(?!.*mobile))/i.test(ua) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isPhone = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) && !isTablet;
+
+        if (isPhone) return 'phone';
+        if (isTablet) return 'tablet';
+        return 'pc';
+    }, []);
+
     // --- Calibration State ---
     const [pixelsPerMm, setPixelsPerMm] = useState<number | null>(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -37,16 +62,17 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
     });
     const [isCalibrating, setIsCalibrating] = useState(false);
     const [isChoosingOptotype, setIsChoosingOptotype] = useState(false);
-    const [tempCardWidth, setTempCardWidth] = useState(320); // Initial pixel width for calibration card
+    const [tempCardWidth, setTempCardWidth] = useState(400); // 110 DPI approx for 85.6mm card
 
     // --- Game State ---
-    const [currentSizeMm, setCurrentSizeMm] = useState(50); // Start at 5cm
-    const [lastCorrectSizeMm, setLastCorrectSizeMm] = useState(60); // Used for midpoint calculation
+    const [currentSizeMm, setCurrentSizeMm] = useState(() => getInitialSizeMm(getDeviceType()));
+    const [lastCorrectSizeMm, setLastCorrectSizeMm] = useState(() => getInitialSizeMm(getDeviceType()) * 1.25);
     const [direction, setDirection] = useState<Direction>('RIGHT');
     const [gameState, setGameState] = useState<'IDLE' | 'CALIBRATING' | 'PLAYING' | 'RESULT'>('IDLE');
     const [timeLeft, setTimeLeft] = useState(DEFAULT_TRAINING_TIME);
     const [history, setHistory] = useState<{ size: number; correct: boolean }[]>([]);
     const [criticalTime, setCriticalTime] = useState(0); // Seconds spent in "critical zone"
+    const [consecutiveWrong, setConsecutiveWrong] = useState(0); // Track consecutive wrong answers
 
     const [showAcuityMilestone, setShowAcuityMilestone] = useState(false);
     const [optotypeType, setOptotypeType] = useState<OptotypeType>('C');
@@ -70,19 +96,6 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
     const visualAcuity = localStorage.getItem('visualAcuity') || '0.2-0.4';
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Device detection helper
-    const getDeviceType = useCallback(() => {
-        const ua = navigator.userAgent;
-        // Improved tablet detection including iPadOS (which reports as Macintosh)
-        const isTablet = /(ipad|tablet|playbook|silk)|(android(?!.*mobile))/i.test(ua) ||
-            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        const isPhone = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) && !isTablet;
-
-        if (isPhone) return 'phone';
-        if (isTablet) return 'tablet';
-        return 'pc';
-    }, []);
 
     // Sync calibration temp value
     useEffect(() => {
@@ -189,29 +202,50 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
 
         if (isCorrect) {
             playSound('correct');
+            setConsecutiveWrong(0); // Reset on correct
             setLastCorrectSizeMm(currentSizeMm);
             const nextSize = currentSizeMm / 1.259;
             setCurrentSizeMm(nextSize);
             onScore(10);
 
             // Device-specific 1.0 threshold
-            // PC (~50cm): 0.73mm
-            // Tablet (~40cm): 0.58mm
-            // Mobile (~33cm): 0.48mm
-            const ua = navigator.userAgent;
-            const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-            const isTablet = /(ipad|tablet|playbook|silk)|(android(?!.*mobile))/i.test(ua);
-
+            const deviceType = getDeviceType();
             let threshold = 0.73; // PC
-            if (isMobile) threshold = 0.48; // Phone
-            else if (isTablet) threshold = 0.58; // Tablet
+            if (deviceType === 'phone') threshold = 0.48;
+            else if (deviceType === 'tablet') threshold = 0.58;
 
             if (nextSize <= threshold && !showAcuityMilestone) {
                 setShowAcuityMilestone(true);
             }
         } else {
             playSound('wrong');
-            setCurrentSizeMm(prev => (prev + lastCorrectSizeMm) / 2);
+            const newWrongCount = consecutiveWrong + 1;
+            setConsecutiveWrong(newWrongCount);
+
+            if (newWrongCount >= 3) {
+                // Stepped rollback: Find the N-th previous correct size based on failure depth
+                // newWrongCount=3 -> previous (1st) correct
+                // newWrongCount=4 -> 2nd previous correct, and so on
+                const correctHistory = history.filter(h => h.correct).reverse();
+                const rollbackIndex = newWrongCount - 3;
+
+                if (correctHistory[rollbackIndex]) {
+                    const fallbackSize = correctHistory[rollbackIndex].size;
+                    setCurrentSizeMm(fallbackSize);
+                    // Update lastCorrectSizeMm to the one before the fallback to maintain the "midpoint" logic if they fail again
+                    if (correctHistory[rollbackIndex + 1]) {
+                        setLastCorrectSizeMm(correctHistory[rollbackIndex + 1].size);
+                    }
+                } else {
+                    // If no more history, go back to initial
+                    const initial = getInitialSizeMm(getDeviceType());
+                    setCurrentSizeMm(initial);
+                    setLastCorrectSizeMm(initial * 1.25);
+                }
+            } else {
+                // Normal slight rollback for 1st and 2nd wrong
+                setCurrentSizeMm(prev => (prev + lastCorrectSizeMm) / 2);
+            }
         }
 
         // Randomize next target based on type
@@ -365,7 +399,9 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
                 <button
                     onClick={() => {
                         setGameState('IDLE');
-                        setCurrentSizeMm(50);
+                        const initial = getInitialSizeMm(getDeviceType());
+                        setCurrentSizeMm(initial);
+                        setLastCorrectSizeMm(initial * 1.25);
                         setTimeLeft(DEFAULT_TRAINING_TIME);
                         setHistory([]);
                         setCriticalTime(0);
@@ -381,7 +417,7 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
     // Optotype Components
     // Dynamic scaling logic: Ensure optotype doesn't overlap with controls
     const getSafeSizePx = () => {
-        const pmm = pixelsPerMm || (96 / 25.4);
+        const pmm = pixelsPerMm || (110 / 25.4);
         const rawSizePx = currentSizeMm * pmm;
 
         // More conservative reserved space calculation
@@ -538,18 +574,34 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
 
             {/* Bottom Controls Group - Absolute positioned but height is reserved in main container */}
             <div className={`absolute bottom-4 left-2 right-2 sm:left-4 sm:right-4 flex flex-col items-center z-30`}>
-                <div className={`flex flex-row items-center justify-center gap-3 sm:gap-6 w-full max-w-2xl px-3 py-2 sm:px-6 sm:py-3 bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-[3rem] border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.1)]`}>
+                <div className={`flex flex-row items-center ${getDeviceType() === 'phone' ? 'justify-between' : 'justify-center'} gap-3 sm:gap-6 w-full max-w-2xl px-3 py-2 sm:px-6 sm:py-3 
+                    ${getDeviceType() === 'phone'
+                        ? 'bg-transparent border-none shadow-none backdrop-blur-none'
+                        : 'bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-[3rem] border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.1)]'
+                    }`}>
 
-                    {/* Timer */}
-                    <div className="flex items-center gap-1.5 bg-white/40 px-3 py-1.5 rounded-xl border border-white/50 shrink-0">
-                        <Timer size={16} className="text-blue-600" />
-                        <span className="font-mono text-sm sm:text-base font-black text-slate-800">
-                            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-                        </span>
+                    {/* Left: Info Column (Mobile) or individual units (PC) */}
+                    <div className={`flex ${getDeviceType() === 'phone' ? 'flex-col gap-2 items-start' : 'items-center gap-6'}`}>
+                        {/* Timer */}
+                        <div className="flex items-center gap-1.5 bg-white/40 px-3 py-1.5 rounded-xl border border-white/50 shrink-0">
+                            <Timer size={16} className="text-blue-600" />
+                            <span className="font-mono text-sm sm:text-base font-black text-slate-800">
+                                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                            </span>
+                        </div>
+
+                        {/* Size display - Visible on mobile info column or hidden on PC sm-break */}
+                        <div className={`${getDeviceType() === 'phone' ? 'flex' : 'hidden sm:flex'} flex-col items-center gap-1 min-w-[80px]`}>
+                            {gameState === 'PLAYING' && (
+                                <div className="bg-slate-900/5 px-3 py-1.5 rounded-lg border border-slate-100">
+                                    <span className="text-xs font-mono font-black text-slate-800">{currentSizeMm.toFixed(2)}mm</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Interaction */}
-                    <div className="flex-1 flex justify-center">
+                    {/* Right: Interaction (Shifted right on mobile) */}
+                    <div className={`${getDeviceType() === 'phone' ? 'flex-1 flex justify-end' : 'flex-1 flex justify-center'}`}>
                         {gameState === 'PLAYING' ? (
                             <div className="flex items-center gap-2 sm:gap-4">
                                 {optotypeType === 'ANIMAL' ? (
@@ -586,15 +638,6 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
                             </div>
                         ) : (
                             <button onClick={() => setGameState('PLAYING')} className="px-6 py-2 sm:px-8 sm:py-3 bg-blue-600 text-white rounded-xl sm:rounded-2xl font-black text-sm sm:text-lg">开始训练</button>
-                        )}
-                    </div>
-
-                    {/* Size display */}
-                    <div className="hidden sm:flex flex-col items-center gap-1 min-w-[80px]">
-                        {gameState === 'PLAYING' && (
-                            <div className="bg-slate-900/5 px-3 py-1.5 rounded-lg border border-slate-100">
-                                <span className="text-xs font-mono font-black text-slate-800">{currentSizeMm.toFixed(2)}mm</span>
-                            </div>
                         )}
                     </div>
                 </div>
