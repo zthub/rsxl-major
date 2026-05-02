@@ -12,13 +12,13 @@ export const getStripeSize = (acuity: string, minDimension: number): number => {
 };
 
 export const getFrequencies = (acuity: string) => {
-    switch (acuity) {
-        case '0.0-0.1': return { freq: 1, rotSpeed: 0.005 };
-        case '0.2-0.4': return { freq: 2, rotSpeed: 0.01 };
-        case '0.5-0.6': return { freq: 4, rotSpeed: 0.02 };
-        case '0.7-0.9': return { freq: 6, rotSpeed: 0.04 };
-        default: return { freq: 2, rotSpeed: 0.01 };
-    }
+  switch (acuity) {
+    case '0.0-0.1': return { freq: 1, rotSpeed: 0.005 };
+    case '0.2-0.4': return { freq: 2, rotSpeed: 0.01 };
+    case '0.5-0.6': return { freq: 4, rotSpeed: 0.02 };
+    case '0.7-0.9': return { freq: 6, rotSpeed: 0.04 };
+    default: return { freq: 2, rotSpeed: 0.01 };
+  }
 };
 
 export const renderCommonBackground = (
@@ -33,78 +33,108 @@ export const renderCommonBackground = (
   const { freq, rotSpeed } = getFrequencies(acuity);
   const flashPeriod = Math.floor(60 / freq);
 
-  // Background Cycle Timing (approx 30s loop at 60fps)
-  const fps = 60;
-  const cycleFrames = 30 * fps;
-  const currentFrameInCycle = frame % cycleFrames;
-  const timeInCycle = currentFrameInCycle / fps;
+  // --- Read Settings from LocalStorage ---
+  // Default to mode '3' (Circle) as the starting point
+  const savedMode = localStorage.getItem('bg_stimulation_mode') || '3';
+  const manualMode = parseInt(savedMode);
+
+  // Color Scheme: 0=Black/White, 1=Red/Green, 2=Yellow/Blue (Default: 0)
+  const savedColor = localStorage.getItem('bg_color_scheme') || '0';
+  const colorIndex = parseInt(savedColor);
+
+  // --- Determine Colors ---
+  let c1 = '#000000';
+  let c2 = '#FFFFFF';
+  if (colorIndex === 1) { // Red/Green
+    c1 = '#FF0000';
+    c2 = '#00FF00';
+  } else if (colorIndex === 2) { // Yellow/Blue
+    c1 = '#FFFF00';
+    c2 = '#0000FF';
+  }
+
+  // --- Determine Loop Mode (Based on persistent cumulative seconds) ---
+  const CYCLE_PERIOD = 180; // 3 minutes = 180 seconds
+  const cycle = [3, 1, 2];
+  
+  const totalSeconds = parseInt(localStorage.getItem('bg_total_play_seconds') || '0');
+  const resetSeconds = parseInt(localStorage.getItem('bg_manual_reset_seconds') || '0');
+  
+  // Calculate effective training time since manual selection
+  // Use Math.max(0) to prevent negative results due to storage race/clearing
+  const activeSeconds = Math.max(0, totalSeconds - resetSeconds);
+  
+  const manualIndex = cycle.indexOf(manualMode) === -1 ? 0 : cycle.indexOf(manualMode);
+  
+  // Choose mode based on how many 3-minute periods have passed
+  const periodsPassed = Math.floor(activeSeconds / CYCLE_PERIOD);
+  const activeMode = cycle[(manualIndex + periodsPassed) % 3];
 
   // --- Drawing Helpers ---
-  const drawScrollingGratings = (c1: string, c2: string) => {
+  const drawFlippingGratings = (color1: string, color2: string) => {
     const step = Math.floor(frame / flashPeriod);
-    const offset = (step * stripeSize) % (stripeSize * 2);
-    ctx.fillStyle = c1;
+    const offset = (step % 2 === 0) ? 0 : stripeSize;
+    ctx.fillStyle = color1;
     ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = c2;
-    for (let x = -stripeSize * 2; x < w + stripeSize; x += stripeSize * 2) {
+    ctx.fillStyle = color2;
+    for (let x = -stripeSize * 2; x < w + stripeSize * 2; x += stripeSize * 2) {
       ctx.fillRect(x + offset, 0, stripeSize, h);
     }
   };
 
-  const drawFlippingCheckerboard = (c1: string, c2: string) => {
-    const invert = Math.floor(frame / flashPeriod) % 2 === 0;
-    for (let x = 0; x < w; x += stripeSize) {
-      for (let y = 0; y < h; y += stripeSize) {
-        const isEven = ((x / stripeSize) + (y / stripeSize)) % 2 === 0;
-        ctx.fillStyle = (isEven === invert) ? c1 : c2;
-        ctx.fillRect(x, y, stripeSize, stripeSize);
-      }
-    }
-  };
-
-  const drawRotatedPattern = (type: 'stripes' | 'checker', c1: string, c2: string) => {
+  const drawRotatedGratings = (color1: string, color2: string) => {
     const centerX = w / 2;
     const centerY = h / 2;
     const maxDim = Math.sqrt(w * w + h * h);
     ctx.save();
     ctx.translate(centerX, centerY);
     ctx.rotate(frame * rotSpeed);
-    ctx.fillStyle = c2;
+    ctx.fillStyle = color2;
     ctx.fillRect(-maxDim, -maxDim, maxDim * 2, maxDim * 2);
-    ctx.fillStyle = c1;
-    if (type === 'stripes') {
-      for (let x = -maxDim; x < maxDim; x += stripeSize * 2) {
-        ctx.fillRect(x, -maxDim, stripeSize, maxDim * 2);
-      }
-    } else {
-      for (let x = -maxDim; x < maxDim; x += stripeSize) {
-        for (let y = -maxDim; y < maxDim; y += stripeSize) {
-          const i = Math.floor(x / stripeSize);
-          const j = Math.floor(y / stripeSize);
-          if ((i + j) % 2 === 0) {
-            ctx.fillRect(x, y, stripeSize, stripeSize);
-          }
-        }
-      }
+    ctx.fillStyle = color1;
+    for (let x = -maxDim; x < maxDim; x += stripeSize * 2) {
+      ctx.fillRect(x, -maxDim, stripeSize, maxDim * 2);
     }
     ctx.restore();
   };
 
-  const drawAlternatingFlash = (c1: string, c2: string) => {
-    const showFirst = Math.floor(frame / flashPeriod) % 2 === 0;
-    ctx.fillStyle = showFirst ? c1 : c2;
+  const drawExpandingRings = (color1: string, color2: string) => {
+    const centerX = w / 2;
+    const centerY = h / 2;
+    const maxRadius = Math.ceil(Math.sqrt(centerX * centerX + centerY * centerY));
+
+    // Continuous outward expansion based on frequency
+    // freq is "flashes per second" in old logic. freq=2 means 1 full cycle per second.
+    const cyclesPerSecond = freq / 2;
+    const speed = (stripeSize * 2 * cyclesPerSecond) / 60;
+    const phaseCycle = stripeSize * 2;
+    const phase = (frame * speed) % phaseCycle;
+
+    ctx.fillStyle = color2;
     ctx.fillRect(0, 0, w, h);
+
+    const totalRings = Math.ceil(maxRadius / stripeSize) + 1;
+
+    // Draw rings from outside in, allowing them to overlap
+    for (let i = totalRings; i >= -2; i--) {
+      const radius = i * stripeSize + phase;
+      if (radius <= 0) continue;
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+
+      const isColor1 = Math.abs(i % 2) === 1;
+      ctx.fillStyle = isColor1 ? color1 : color2;
+      ctx.fill();
+    }
   };
 
-  // --- Sequence Logic ---
-  if (timeInCycle < 4) drawScrollingGratings('#000000', '#FFFFFF');
-  else if (timeInCycle < 8) drawScrollingGratings('#FF0000', '#FFFF00');
-  else if (timeInCycle < 12) drawFlippingCheckerboard('#000000', '#FFFFFF');
-  else if (timeInCycle < 16) drawFlippingCheckerboard('#FF0000', '#FFFF00');
-  else if (timeInCycle < 19) drawAlternatingFlash('#000000', '#FFFFFF');
-  else if (timeInCycle < 22) drawAlternatingFlash('#FF0000', '#FFFF00');
-  else if (timeInCycle < 24) drawRotatedPattern('stripes', '#000000', '#FFFFFF');
-  else if (timeInCycle < 26) drawRotatedPattern('stripes', '#FF0000', '#FFFF00');
-  else if (timeInCycle < 28) drawRotatedPattern('checker', '#000000', '#FFFFFF');
-  else drawRotatedPattern('checker', '#FF0000', '#FFFF00');
+  // --- Execute Rendering ---
+  if (activeMode === 3) {
+    drawExpandingRings(c1, c2);
+  } else if (activeMode === 2) {
+    drawRotatedGratings(c1, c2);
+  } else {
+    drawFlippingGratings(c1, c2);
+  }
 };

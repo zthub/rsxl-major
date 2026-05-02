@@ -35,14 +35,31 @@ import { FusionGame } from './fusion/FusionGame';
 import { FusionPointGame } from './fusion/FusionPointGame';
 import { StereoscopicGame } from './stereoscopic/StereoscopicGame';
 import { DepthCatchGame } from './stereoscopic/DepthCatchGame';
+import { FusionEChartGame } from './fusion/FusionEChartGame';
 import { OnlineVideoPlayer } from './grating/OnlineVideoPlayer';
 import { LocalVideoPlayer } from './grating/LocalVideoPlayer';
-import { StrongFlashGame } from './stimulation/StrongFlashGame';
+// New puzzle games
+import { MemoryCardGame } from './stimulation/MemoryCardGame';
+import { ColorLinkGame } from './stimulation/ColorLinkGame';
+import { NumberTapGame } from './stimulation/NumberTapGame';
+import { ShapeSortGame } from './stimulation/ShapeSortGame';
+import { SudokuGame } from './stimulation/SudokuGame';
+import { SlidePuzzleGame } from './stimulation/SlidePuzzleGame';
+import { MinesweeperGame } from './stimulation/MinesweeperGame';
+import { PipeConnectGame } from './stimulation/PipeConnectGame';
+import { AnimalMergeGame } from './stimulation/AnimalMergeGame';
+import { WordSearchGame } from './stimulation/WordSearchGame';
+import { ImageSlidePuzzleGame } from './stimulation/ImageSlidePuzzleGame';
+
+// New Action, Shooting, and Card games
+import { NinjaSliceGame } from './stimulation/NinjaSliceGame';
+import { JumpAdventureGame } from './stimulation/JumpAdventureGame';
+import { BubbleShooterGame } from './stimulation/BubbleShooterGame';
+import { SolitaireGame } from './stimulation/SolitaireGame';
 
 // Registry mapping game IDs to their implementation components
 export const GameRegistry: Record<string, React.FC<GameComponentProps>> = {
     // Stimulation
-    'g1-4': StrongFlashGame, // 视觉刺激 - 强闪
     'g1-8': OddOneOutGame,
     'g1-5': WatermelonGame,
     'g1-6': FindFruitGame,
@@ -55,6 +72,21 @@ export const GameRegistry: Record<string, React.FC<GameComponentProps>> = {
     'g1-14': ParkingGame,
     'g1-15': DrinkShopGame,
     'g1-16': LogicReasoningGame,
+    'g1-17': MemoryCardGame,    // 记忆翻牌
+    'g1-18': ColorLinkGame,     // 颜色连连看
+    'g1-19': NumberTapGame,     // 数数字
+    'g1-20': ShapeSortGame,     // 图形拼板
+    'g1-21': SudokuGame,        // 数独挑战
+    'g1-22': SlidePuzzleGame,   // 数字华容道
+    'g1-29': ImageSlidePuzzleGame, // 图片华容道
+    'g1-23': MinesweeperGame,   // 扫雷小勇士
+    'g1-24': PipeConnectGame,   // 接水管
+    'g1-25': AnimalMergeGame,   // 动物合成消消乐
+    'g1-26': WordSearchGame,    // 找词语
+    'g1-27': NinjaSliceGame,    // 忍者切切乐
+    'g1-28': JumpAdventureGame, // 跳跃大冒险
+    'g1-30': BubbleShooterGame, // 泡泡神射手
+    'g1-31': SolitaireGame,     // 经典纸牌
 
     // Fine Motor
     'g2-1': TraceContourGame, // 连点成画
@@ -80,6 +112,7 @@ export const GameRegistry: Record<string, React.FC<GameComponentProps>> = {
     // Fusion
     'g4-1': FusionGame,
     'g4-2': FusionPointGame, // 融合点点击
+    'g4-3': FusionEChartGame, // 融合之E字表
 
     // Stereoscopic
     'g5-1': StereoscopicGame,

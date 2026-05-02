@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameComponentProps } from '../../types';
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Settings, CheckCircle, RefreshCcw, Timer, Eye, EyeOff, Cat, Dog, Rabbit, Bird, Fish, Bug } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Settings, CheckCircle, RefreshCcw, Timer, Eye, EyeOff, Cat, Dog, Rabbit, Bird, Fish, Bug, Layers, Palette } from 'lucide-react';
 import { renderCommonBackground } from '../../utils/visualRendering';
 import { playSound } from '../../utils/gameUtils';
+import { dbService } from '../../utils/dbService';
 
 const STORAGE_KEY = 'rsxl_crp_pixels_per_mm';
 const DEFAULT_TRAINING_TIME = 180; // 3 minutes
@@ -191,9 +192,33 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
         }
     }, [gameState, isPlaying, currentSizeMm, history]);
 
-    const endGame = () => {
+    const endGame = async () => {
         setGameState('RESULT');
         onGameOver();
+
+        // Calculate a score for the database
+        // In this game, smaller size is better. 
+        // We can create a simple score out of 100 based on how small they got.
+        const minSize = history.length > 0 ? Math.min(...history.map(h => h.size)) : currentSizeMm;
+
+        // Let's say getting down to 0.5mm is a perfect 100 score, starting at ~72mm is 0.
+        const initialSize = getInitialSizeMm(getDeviceType());
+        let calculatedScore = Math.max(0, Math.min(100, Math.round(((initialSize - minSize) / (initialSize - 0.5)) * 100)));
+
+        try {
+            await dbService.saveTrainingSession({
+                game_id: 'critical-point',
+                score: calculatedScore,
+                duration_seconds: DEFAULT_TRAINING_TIME - timeLeft,
+                acuity_settings: JSON.stringify({
+                    minSizeAchieved: minSize.toFixed(2),
+                    optotype: optotypeType,
+                    criticalTime
+                })
+            });
+        } catch (error) {
+            console.error("Failed to save session:", error);
+        }
     };
 
     const nextRound = useCallback((isCorrect: boolean) => {
@@ -759,6 +784,7 @@ export const CriticalPointGame: React.FC<GameComponentProps> = ({
                     </div>
                 </div>
             )}
+
         </div>
     );
 };

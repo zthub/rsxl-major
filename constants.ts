@@ -22,8 +22,21 @@ export const TRAINING_MODULES: TrainingModule[] = [
       { id: 'g1-14', title: '快乐停车场', description: '移动车辆为红色小车让路，从右侧出口开出！', difficulty: 'Medium' },
       { id: 'g1-15', title: '色彩饮品店', description: '将相同颜色的饮料倒在一起，满足顾客点单需求', difficulty: 'Medium' },
       { id: 'g1-16', title: '逻辑推理', description: '包含物品位置摆放与语音逻辑推理，锻炼大脑思维', difficulty: 'Medium' },
-      // 强闪永远放在视觉刺激模块的最后
-      { id: 'g1-4', title: '强闪刺激', description: '整屏在红黄蓝黑白之间快速闪烁，可根据视力自动调频并手动微调速率', difficulty: 'Medium' },
+      { id: 'g1-17', title: '记忆翻牌', description: '翻开卡片找出相同的水果配对，锻炼记忆力', difficulty: 'Easy' },
+      { id: 'g1-18', title: '颜色连连看', description: '点击相同颜色的球进行配对连线', difficulty: 'Easy' },
+      { id: 'g1-19', title: '数数字', description: '按从小到大的顺序依次点击数字', difficulty: 'Easy' },
+      { id: 'g1-20', title: '图形拼板', description: '拖拽图形到对应的轮廓位置进行匹配', difficulty: 'Easy' },
+      { id: 'g1-21', title: '数独挑战', description: '在方格中填入正确数字，每行每列不重复', difficulty: 'Hard' },
+      { id: 'g1-22', title: '数字华容道', description: '滑动数字方块，按顺序排列整齐', difficulty: 'Medium' },
+      { id: 'g1-23', title: '扫雷小勇士', description: '翻开安全格子，避开隐藏的地雷', difficulty: 'Hard' },
+      { id: 'g1-24', title: '接水管', description: '旋转管道碎片，连通从起点到终点的路径', difficulty: 'Medium' },
+      { id: 'g1-25', title: '动物合成消消乐', description: '滑动合成相同动物，进化成更高级的动物', difficulty: 'Medium' },
+      { id: 'g1-26', title: '找词语', description: '在方格中拖拽找出隐藏的词语', difficulty: 'Medium' },
+      { id: 'g1-27', title: '忍者切切乐', description: '滑动切开飞出的目标，避开炸弹！', difficulty: 'Medium' },
+      { id: 'g1-28', title: '跳跃大冒险', description: '操作小格子在不断下降的台阶上向上跳跃', difficulty: 'Medium' },
+      { id: 'g1-29', title: '图片华容道', description: '移动图片碎片还原完整卡通图，后续关卡需逐步解锁', difficulty: 'Easy' },
+      { id: 'g1-30', title: '泡泡神射手', description: '发射泡泡，凑齐至少3个同色进行消除', difficulty: 'Easy' },
+      { id: 'g1-31', title: '经典纸牌', description: '连接红黑交替并降序排列的卡片完成接龙', difficulty: 'Hard' },
     ]
   },
   {
@@ -73,6 +86,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
     games: [
       { id: 'g4-1', title: '圆环融合', description: '通过调节眼肌融合两个圆环', difficulty: 'Medium' },
       { id: 'g4-2', title: '融合点点击', description: '点击红蓝点之间的中点进行融合，训练双眼融合能力', difficulty: 'Easy' },
+      { id: 'g4-3', title: '融合之E字表', description: '在随机噪点中寻找隐藏的E字，判断开口方向，训练高级融合视功能。', difficulty: 'Hard' },
     ]
   },
   {
