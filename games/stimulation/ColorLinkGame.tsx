@@ -51,7 +51,14 @@ export const ColorLinkGame: React.FC<GameComponentProps> = ({ width, height, isP
     }));
 
     // Shuffle right side positions
-    const rightPositions = [...Array(pairCount).keys()].sort(() => Math.random() - 0.5);
+    // Avoid vertical same-color alignment as much as possible (derangement)
+    const makePositions = () => [...Array(pairCount).keys()].sort(() => Math.random() - 0.5);
+    let rightPositions = makePositions();
+    let tries = 0;
+    while (tries < 20 && rightPositions.some((pos, i) => pos === i) && pairCount > 1) {
+      rightPositions = makePositions();
+      tries++;
+    }
     rightPositions.forEach((pos, i) => {
       pairsRef.current[i].right.x = spacing * (pos + 1);
       pairsRef.current[i].right.targetX = spacing * (pos + 1);
@@ -86,9 +93,9 @@ export const ColorLinkGame: React.FC<GameComponentProps> = ({ width, height, isP
         if (Math.hypot(x - ball.x, y - ball.y) < ballRadius + 10) {
           if (firstBallRef.current === null) {
             firstBallRef.current = { pairIdx: i, side };
-            currentColorRef.current = COLORS[ball.colorIdx].colorIdx;
-          } else if (firstBallRef.current.pairIdx === i) {
-            // Same pair - connect!
+            currentColorRef.current = ball.colorIdx;
+          } else if (firstBallRef.current.pairIdx === i && firstBallRef.current.side !== side) {
+            // Same pair but different side - connect!
             connectionsRef.current[i] = true;
             left.connected = true;
             right.connected = true;

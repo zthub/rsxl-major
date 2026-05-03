@@ -28,8 +28,14 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
   const frameCountRef = useRef(0);
   const visualAcuity = localStorage.getItem('visualAcuity') || '0.2-0.4';
 
-  const [level, setLevel] = useState(1);
+  const LEVEL_STORAGE_KEY = 'solitaire_level_v1';
+  const MAX_LEVEL = 6;
+  const [level, setLevel] = useState(() => {
+    const saved = Number(localStorage.getItem(LEVEL_STORAGE_KEY) || '1');
+    return Number.isFinite(saved) ? Math.max(1, Math.min(MAX_LEVEL, Math.floor(saved))) : 1;
+  });
   const [gameOverState, setGameOverState] = useState<'playing' | 'win' | 'stuck'>('playing');
+  const [showLevelSelect, setShowLevelSelect] = useState(false);
 
   const columnsRef = useRef<Column[]>([]);
   const foundationsRef = useRef<Column[]>([]);
@@ -46,42 +52,99 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
   const colCount = 6;
   const marginX = (width - colCount * cardW) / (colCount + 1);
 
-  const initGame = useCallback(() => {
-    // Generate a mini deck (values 1 to 5 + level)
-    const maxVal = Math.min(13, 3 + level * 2);
+  const getMaxVal = useCallback((lv: number) => Math.min(13, 3 + lv * 2), []);
+
+  const canMoveFromState = useCallback((cols: Column[], fnds: Column[]) => {
+    // Check if any move exists (to foundations or between columns)
+    // Foundations
+    for (let c = 0; c < cols.length; c++) {
+      const col = cols[c].cards;
+      const bottom = col[col.length - 1];
+      if (bottom?.faceUp) {
+        for (let f = 0; f < fnds.length; f++) {
+          const fCol = fnds[f].cards;
+          const topF = fCol[fCol.length - 1];
+          if ((!topF && bottom.value === 1) || (topF && topF.suit === bottom.suit && topF.value === bottom.value - 1)) {
+            return true;
+          }
+        }
+      }
+    }
+    // Between columns - check both single card and multi-card sequences
+    for (let sourceCol = 0; sourceCol < cols.length; sourceCol++) {
+      const sCol = cols[sourceCol].cards;
+      for (let i = 0; i < sCol.length; i++) {
+        const dragCard = sCol[i];
+        if (!dragCard.faceUp) continue;
+        // Check if this card and all above it form a valid sequence
+        const dragCards = sCol.slice(i);
+        let validSequence = true;
+        for (let k = 1; k < dragCards.length; k++) {
+          if (dragCards[k].color === dragCards[k - 1].color || dragCards[k].value !== dragCards[k - 1].value - 1) {
+            validSequence = false;
+            break;
+          }
+        }
+        if (!validSequence) continue;
+        // Try to place this sequence on another column
+        for (let targetCol = 0; targetCol < cols.length; targetCol++) {
+          if (sourceCol === targetCol) continue;
+          const tCol = cols[targetCol].cards;
+          const topTarget = tCol[tCol.length - 1];
+          if (!topTarget) return true;
+          if (topTarget.faceUp && topTarget.color !== dragCard.color && topTarget.value === dragCard.value + 1) return true;
+        }
+      }
+    }
+    return false;
+  }, []);
+
+  const dealNewGame = useCallback((lv: number) => {
+    // Generate a mini deck (values 1..maxVal)
+    const maxVal = getMaxVal(lv);
     const deck: Card[] = [];
-    const suits: {s:Suit, c:Color}[] = [
-      {s:'♥', c:'R'}, {s:'♦', c:'R'}, {s:'♠', c:'B'}, {s:'♣', c:'B'}
+    const suits: { s: Suit; c: Color }[] = [
+      { s: '♥', c: 'R' }, { s: '♦', c: 'R' }, { s: '♠', c: 'B' }, { s: '♣', c: 'B' }
     ];
-    suits.forEach(suitInfo => {
-       for(let v=1; v<=maxVal; v++) {
-          deck.push({
-             id: `${suitInfo.s}${v}`,
-             suit: suitInfo.s, color: suitInfo.c, value: v,
-             faceUp: false, x: 0, y: 0
-          });
-       }
-    });
-    
-    // Shuffle
-    deck.sort(() => Math.random() - 0.5);
-
-    // Distribute to 6 columns
-    const cols: Column[] = Array.from({length: 6}, () => ({ cards: [] }));
-    deck.forEach((card, idx) => {
-       cols[idx % 6].cards.push(card);
+    suits.forEach((suitInfo) => {
+      for (let v = 1; v <= maxVal; v++) {
+        deck.push({ id: `${suitInfo.s}${v}`, suit: suitInfo.s, color: suitInfo.c, value: v, faceUp: false, x: 0, y: 0 });
+      }
     });
 
-    cols.forEach(col => {
-       if (col.cards.length > 0) col.cards[col.cards.length - 1].faceUp = true;
-    });
+    const makeAttempt = () => {
+      const d = [...deck].sort(() => Math.random() - 0.5);
+      const cols: Column[] = Array.from({ length: 6 }, () => ({ cards: [] }));
+      d.forEach((card, idx) => { cols[idx % 6].cards.push(card); });
 
-    columnsRef.current = cols;
-    
-    // 4 Foundations
-    foundationsRef.current = Array.from({length: 4}, () => ({ cards: [] }));
+      // Face-up policy: always last card face-up; for higher levels (maxVal>=9) also reveal the last 2 cards to reduce early dead-ends
+      cols.forEach((col) => {
+        if (col.cards.length === 0) return;
+        col.cards[col.cards.length - 1].faceUp = true;
+        if (maxVal >= 9 && col.cards.length >= 2) col.cards[col.cards.length - 2].faceUp = true;
+      });
+
+      const fnds: Column[] = Array.from({ length: 4 }, () => ({ cards: [] }));
+      return { cols, fnds };
+    };
+
+    // Avoid "one or two moves then stuck" by ensuring at least one legal move at start (retry a few times)
+    let attempt = makeAttempt();
+    let tries = 0;
+    while (tries < 30 && !canMoveFromState(attempt.cols, attempt.fnds)) {
+      attempt = makeAttempt();
+      tries++;
+    }
+
+    columnsRef.current = attempt.cols;
+    foundationsRef.current = attempt.fnds;
     setGameOverState('playing');
-  }, [level]);
+  }, [canMoveFromState, getMaxVal]);
+
+  const initGame = useCallback(() => {
+    localStorage.setItem(LEVEL_STORAGE_KEY, String(level));
+    dealNewGame(level);
+  }, [dealNewGame, level]);
 
   const checkStuck = useCallback(() => {
     for (let c = 0; c < 6; c++) {
@@ -178,25 +241,7 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Refresh Button Hit Test
-    const btnW = 120;
-    const btnH = 40;
-    const btnX = width - btnW - Math.max(20, width * 0.02);
-    const btnY = Math.max(70, height * 0.1) - 25;
-    
-    if (x >= btnX && x <= btnX + btnW && y >= btnY && y <= btnY + btnH) {
-       initGame();
-       playSound('shoot');
-       return;
-    }
-
     if (gameOverState !== 'playing') {
-       const goBtnW = 200, goBtnH = 50;
-       const goBtnX = width/2 - goBtnW/2, goBtnY = height/2 + 40;
-       if (x > goBtnX && x < goBtnX + goBtnW && y > goBtnY && y < goBtnY + goBtnH) {
-          if (gameOverState === 'stuck') initGame(); 
-          playSound('shoot');
-       }
        return;
     }
 
@@ -321,7 +366,7 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
 
     // Check Win or Stuck
     const totalFoundations = foundationsRef.current.reduce((sum, col) => sum + col.cards.length, 0);
-    const maxVal = Math.min(13, 3 + level * 2);
+    const maxVal = getMaxVal(level);
     if (totalFoundations === 4 * maxVal) {
        setGameOverState('win');
        playSound('correct');
@@ -385,27 +430,13 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
     ctx.fillRect(0, 0, width, height);
 
     if (gameOverState !== 'playing') {
-       ctx.fillStyle = 'rgba(0,0,0,0.6)';
-       ctx.fillRect(0, 0, width, height);
        if (gameOverState === 'win') {
+         ctx.fillStyle = 'rgba(0,0,0,0.6)';
+         ctx.fillRect(0, 0, width, height);
          ctx.fillStyle = '#4ade80';
          ctx.font = `bold ${Math.min(48, width * 0.06)}px sans-serif`;
          ctx.textAlign = 'center';
          ctx.fillText('🎊 完美解开！', width/2, height/2 - 20);
-       } else if (gameOverState === 'stuck') {
-         ctx.fillStyle = '#ef4444';
-         ctx.font = `bold ${Math.min(45, width * 0.06)}px sans-serif`;
-         ctx.textAlign = 'center';
-         ctx.fillText('🤔 牌局卡死了', width/2, height/2 - 20);
-         
-         const btnW = 200, btnH = 50;
-         const btnX = width/2 - btnW/2, btnY = height/2 + 40;
-         ctx.fillStyle = '#3b82f6';
-         ctx.beginPath(); ctx.roundRect(btnX, btnY, btnW, btnH, 10); ctx.fill();
-         ctx.fillStyle = '#fff';
-         ctx.font = 'bold 20px sans-serif';
-         ctx.textBaseline = 'middle';
-         ctx.fillText('重新生成本关', width/2, btnY + btnH/2);
        }
        requestRef.current = requestAnimationFrame(animate);
        return;
@@ -460,25 +491,8 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
     ctx.fillText(`关卡: ${level}`, Math.max(20, width * 0.02), Math.max(70, height * 0.1));
     ctx.shadowBlur = 0;
 
-    // Refresh Button
-    const btnW = 120;
-    const btnH = 40;
-    const btnX = width - btnW - Math.max(20, width * 0.02);
-    const btnY = Math.max(70, height * 0.1) - 25;
-    
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.beginPath(); ctx.roundRect(btnX, btnY, btnW, btnH, 8); ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-    ctx.lineWidth = 1; ctx.stroke();
-    
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold 16px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🔄 重新生成', btnX + btnW/2, btnY + btnH/2);
-
     requestRef.current = requestAnimationFrame(animate);
-  }, [width, height, visualAcuity, level, gameOverState, cardW, cardH, marginX]);
+  }, [width, height, visualAcuity, level, gameOverState, cardW, cardH, marginX, getMaxVal]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -498,13 +512,90 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
   }, [isPlaying, animate]);
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      className="block touch-none cursor-grab active:cursor-grabbing" 
-    />
+    <div className="relative w-full h-full">
+      <canvas
+        ref={canvasRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        className="block touch-none cursor-grab active:cursor-grabbing"
+      />
+
+      {/* Level controls (refresh is handled by GamePlayer's top-right button) */}
+      <div className="absolute top-14 md:top-16 right-16 md:right-20 z-10 pointer-events-auto flex items-center gap-2">
+        <button
+          onClick={() => setShowLevelSelect(true)}
+          className="px-3 py-1.5 rounded-full bg-white/90 hover:bg-white text-slate-800 text-xs md:text-sm font-black shadow"
+        >
+          选关
+        </button>
+      </div>
+
+      {showLevelSelect && (
+        <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto">
+          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <div className="space-y-1">
+                <div className="text-lg font-black text-slate-800">经典纸牌 - 选择关卡</div>
+                <div className="text-xs text-slate-500">刷新会重新发当前关的牌，不会回到第 1 关</div>
+              </div>
+              <button
+                onClick={() => setShowLevelSelect(false)}
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold"
+              >
+                关闭
+              </button>
+            </div>
+            <div className="p-5">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {Array.from({ length: MAX_LEVEL }).map((_, idx) => {
+                  const lv = idx + 1;
+                  const active = lv === level;
+                  return (
+                    <button
+                      key={lv}
+                      onClick={() => {
+                        setShowLevelSelect(false);
+                        setLevel(lv);
+                        localStorage.setItem(LEVEL_STORAGE_KEY, String(lv));
+                      }}
+                      className={[
+                        'h-10 rounded-xl font-extrabold text-sm shadow-sm transition',
+                        active ? 'bg-brand-blue text-white' : 'bg-slate-100 text-slate-700 hover:shadow hover:scale-[1.02]',
+                      ].join(' ')}
+                      title={`最大牌值: ${getMaxVal(lv)}`}
+                    >
+                      {lv}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-4 text-xs text-slate-500">
+                当前关卡最大牌值：{getMaxVal(level)}（A ~ {getMaxVal(level)})
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {gameOverState === 'stuck' && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center p-4 pointer-events-none">
+          <div className="w-full max-w-sm bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-slate-100 overflow-hidden pointer-events-auto">
+            <div className="px-5 py-6 text-center space-y-3">
+              <div className="text-3xl">🤔</div>
+              <div className="text-lg font-black text-slate-800">牌局卡死了</div>
+              <div className="text-sm text-slate-500">请点击右上角刷新重新发牌</div>
+              <button
+                onClick={() => setGameOverState('playing')}
+                className="mt-2 px-6 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm"
+              >
+                知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

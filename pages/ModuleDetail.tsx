@@ -7,6 +7,7 @@ import { Game } from '../types';
 export const ModuleDetail: React.FC = () => {
   const { moduleId } = useParams<{ moduleId: string }>();
   const module = TRAINING_MODULES.find((m) => m.id === moduleId);
+  const scrollKey = `scroll:module:${moduleId || 'unknown'}`;
 
   // State for Visual Acuity (only for stimulation module)
   const [visualAcuity, setVisualAcuity] = useState<string>('0.2-0.4');
@@ -15,6 +16,18 @@ export const ModuleDetail: React.FC = () => {
     const saved = localStorage.getItem('visualAcuity');
     if (saved) setVisualAcuity(saved);
   }, []);
+
+  // Restore scroll position when returning from a game
+  useEffect(() => {
+    const raw = sessionStorage.getItem(scrollKey);
+    const y = raw ? Number(raw) : 0;
+    if (Number.isFinite(y) && y > 0) {
+      requestAnimationFrame(() => window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior }));
+    }
+    return () => {
+      sessionStorage.setItem(scrollKey, String(window.scrollY || 0));
+    };
+  }, [scrollKey]);
 
   const handleAcuityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       const val = e.target.value;
