@@ -165,8 +165,6 @@ export const CardMergeGame: React.FC<GameComponentProps> = ({ width, height, isP
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     if (gameOverState) {
        ctx.fillStyle = 'rgba(0,0,0,0.6)';

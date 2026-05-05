@@ -97,8 +97,6 @@ export const NumberTapGame: React.FC<GameComponentProps> = ({ width, height, isP
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     const topOffset = Math.max(80, height * 0.1);
 
@@ -106,9 +104,7 @@ export const NumberTapGame: React.FC<GameComponentProps> = ({ width, height, isP
     ctx.fillStyle = '#fff';
     ctx.font = `bold ${Math.min(24, width * 0.03)}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'black'; ctx.shadowBlur = 6;
     ctx.fillText(`第 ${level} 关  |  下一个: ${nextNumRef.current}`, width / 2, topOffset);
-    ctx.shadowBlur = 0;
 
     // Draw numbers
     for (const item of numbersRef.current) {
@@ -126,8 +122,6 @@ export const NumberTapGame: React.FC<GameComponentProps> = ({ width, height, isP
       } else {
         // Not clicked yet
         const isNext = item.num === nextNumRef.current;
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur = 6;
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
         ctx.beginPath();
@@ -160,12 +154,10 @@ export const NumberTapGame: React.FC<GameComponentProps> = ({ width, height, isP
       ctx.fillStyle = '#facc15';
       ctx.font = `bold ${Math.min(56, width * 0.06)}px sans-serif`;
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'black'; ctx.shadowBlur = 10;
       ctx.fillText('🎉 太棒了！', width / 2, height / 2 - 10);
       ctx.fillStyle = '#fff';
       ctx.font = `${Math.min(28, width * 0.03)}px sans-serif`;
       ctx.fillText('准备下一关...', width / 2, height / 2 + 40);
-      ctx.shadowBlur = 0;
     }
 
     requestRef.current = requestAnimationFrame(animate);

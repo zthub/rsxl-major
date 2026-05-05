@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { TRAINING_MODULES } from '../constants';
 import * as Icons from 'lucide-react';
 import { Game } from '../types';
 
 export const ModuleDetail: React.FC = () => {
   const { moduleId } = useParams<{ moduleId: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
   const module = TRAINING_MODULES.find((m) => m.id === moduleId);
   const scrollKey = `scroll:module:${moduleId || 'unknown'}`;
 
@@ -17,15 +19,43 @@ export const ModuleDetail: React.FC = () => {
     if (saved) setVisualAcuity(saved);
   }, []);
 
-  // Restore scroll position when returning from a game
+  // Restore scroll position on mount
   useEffect(() => {
-    const raw = sessionStorage.getItem(scrollKey);
+    const raw = localStorage.getItem(scrollKey);
     const y = raw ? Number(raw) : 0;
+    console.log('[ModuleDetail] RESTORE - key:', scrollKey, 'saved:', raw, 'parsed:', y, 'current:', window.scrollY);
+    
     if (Number.isFinite(y) && y > 0) {
-      requestAnimationFrame(() => window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior }));
+      // Use multiple attempts to ensure scroll restoration works
+      let attempts = 0;
+      const tryScroll = () => {
+        attempts++;
+        console.log(`[ModuleDetail] Scroll attempt ${attempts} to ${y}, current:`, window.scrollY);
+        window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior });
+        if (attempts < 3 && Math.abs(window.scrollY - y) > 10) {
+          setTimeout(tryScroll, 100 * attempts);
+        } else {
+          console.log('[ModuleDetail] Final scroll position:', window.scrollY);
+        }
+      };
+      setTimeout(tryScroll, 50);
+    } else {
+      console.log('[ModuleDetail] No scroll position to restore');
     }
+  }, [scrollKey]);
+
+  // Track scroll position and save to localStorage
+  useEffect(() => {
+    const handleScroll = () => {
+      const pos = window.scrollY || 0;
+      if (pos > 0) {
+        localStorage.setItem(scrollKey, String(pos));
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      sessionStorage.setItem(scrollKey, String(window.scrollY || 0));
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [scrollKey]);
 
@@ -104,6 +134,14 @@ const GameItem: React.FC<GameItemProps> = ({ game, moduleId }) => {
     if (game.difficulty === 'Medium') difficultyColor = 'bg-yellow-100 text-yellow-700';
     if (game.difficulty === 'Hard') difficultyColor = 'bg-red-100 text-red-700';
 
+  const scrollKey = `scroll:module:${moduleId || 'unknown'}`;
+
+  const handleMouseDown = () => {
+    const currentScroll = window.scrollY || 0;
+    console.log('[GameItem] MouseDown - saving scroll:', scrollKey, currentScroll);
+    localStorage.setItem(scrollKey, String(currentScroll));
+  };
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex justify-between items-center group">
       <div>
@@ -120,6 +158,7 @@ const GameItem: React.FC<GameItemProps> = ({ game, moduleId }) => {
       
       <Link 
         to={`/module/${moduleId}/game/${game.id}`}
+        onMouseDown={handleMouseDown}
         className="ml-4 w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all"
       >
         <Icons.Play className="w-5 h-5 ml-1" />

@@ -214,8 +214,6 @@ export const ShapeSortGame: React.FC<GameComponentProps> = ({ width, height, isP
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     // Divider
     ctx.strokeStyle = 'rgba(255,255,255,0.2)';

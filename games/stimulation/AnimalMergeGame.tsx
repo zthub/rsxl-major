@@ -363,8 +363,6 @@ export const AnimalMergeGame: React.FC<GameComponentProps> = ({ width, height, i
 
     // 背景
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     // 顶部信息栏
     ctx.fillStyle = '#fff';
@@ -541,15 +539,12 @@ export const AnimalMergeGame: React.FC<GameComponentProps> = ({ width, height, i
       const titleSize = Math.min(56, width * 0.06);
       ctx.font = `bold ${titleSize}px sans-serif`;
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'black';
-      ctx.shadowBlur = 10;
       const wonEmoji = ANIMAL_MAP.get(targetRef.current) || '🏆';
       ctx.fillText(`🎉 获得 ${wonEmoji}！`, width / 2, height / 2 - 40);
 
       ctx.fillStyle = '#fff';
       ctx.font = `${Math.min(24, width * 0.028)}px sans-serif`;
       ctx.fillText('准备下一关...', width / 2, height / 2 + 15);
-      ctx.shadowBlur = 0;
 
       // "下一关"按钮
       const btnW = Math.min(200, width * 0.4);
@@ -577,10 +572,7 @@ export const AnimalMergeGame: React.FC<GameComponentProps> = ({ width, height, i
       ctx.fillStyle = '#ef4444';
       ctx.font = `bold ${Math.min(56, width * 0.06)}px sans-serif`;
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'black';
-      ctx.shadowBlur = 10;
       ctx.fillText('游戏结束', width / 2, height / 2);
-      ctx.shadowBlur = 0;
     }
 
     requestRef.current = requestAnimationFrame(animate);

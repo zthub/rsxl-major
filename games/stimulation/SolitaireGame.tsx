@@ -34,7 +34,7 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
     const saved = Number(localStorage.getItem(LEVEL_STORAGE_KEY) || '1');
     return Number.isFinite(saved) ? Math.max(1, Math.min(MAX_LEVEL, Math.floor(saved))) : 1;
   });
-  const [gameOverState, setGameOverState] = useState<'playing' | 'win' | 'stuck'>('playing');
+  const [gameOverState, setGameOverState] = useState<'playing' | 'win' | 'stuck' | 'stuck-closed'>('playing');
   const [showLevelSelect, setShowLevelSelect] = useState(false);
 
   const columnsRef = useRef<Column[]>([]);
@@ -47,60 +47,114 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
     cards: Card[];
   } | null>(null);
 
-  const cardW = Math.max(30, width * 0.08);
-  const cardH = cardW * 1.45;
+  const cardW = Math.max(28, width * 0.065);
+  const cardH = cardW * 1.4;
   const colCount = 6;
   const marginX = (width - colCount * cardW) / (colCount + 1);
 
   const getMaxVal = useCallback((lv: number) => Math.min(13, 3 + lv * 2), []);
 
   const canMoveFromState = useCallback((cols: Column[], fnds: Column[]) => {
-    // Check if any move exists (to foundations or between columns)
-    // Foundations
     for (let c = 0; c < cols.length; c++) {
       const col = cols[c].cards;
+      if (col.length === 0) continue;
       const bottom = col[col.length - 1];
-      if (bottom?.faceUp) {
-        for (let f = 0; f < fnds.length; f++) {
-          const fCol = fnds[f].cards;
-          const topF = fCol[fCol.length - 1];
-          if ((!topF && bottom.value === 1) || (topF && topF.suit === bottom.suit && topF.value === bottom.value - 1)) {
-            return true;
-          }
+      if (!bottom.faceUp) continue;
+      for (let f = 0; f < fnds.length; f++) {
+        const fCol = fnds[f].cards;
+        const topF = fCol[fCol.length - 1];
+        if ((!topF && bottom.value === 1) || (topF && topF.suit === bottom.suit && topF.value === bottom.value - 1)) {
+          return true;
         }
       }
-    }
-    // Between columns - check both single card and multi-card sequences
-    for (let sourceCol = 0; sourceCol < cols.length; sourceCol++) {
-      const sCol = cols[sourceCol].cards;
-      for (let i = 0; i < sCol.length; i++) {
-        const dragCard = sCol[i];
-        if (!dragCard.faceUp) continue;
-        // Check if this card and all above it form a valid sequence
-        const dragCards = sCol.slice(i);
-        let validSequence = true;
-        for (let k = 1; k < dragCards.length; k++) {
-          if (dragCards[k].color === dragCards[k - 1].color || dragCards[k].value !== dragCards[k - 1].value - 1) {
-            validSequence = false;
-            break;
-          }
-        }
-        if (!validSequence) continue;
-        // Try to place this sequence on another column
-        for (let targetCol = 0; targetCol < cols.length; targetCol++) {
-          if (sourceCol === targetCol) continue;
-          const tCol = cols[targetCol].cards;
-          const topTarget = tCol[tCol.length - 1];
-          if (!topTarget) return true;
-          if (topTarget.faceUp && topTarget.color !== dragCard.color && topTarget.value === dragCard.value + 1) return true;
-        }
+      for (let targetCol = 0; targetCol < cols.length; targetCol++) {
+        if (c === targetCol) continue;
+        const tCol = cols[targetCol].cards;
+        const topTarget = tCol[tCol.length - 1];
+        if (!topTarget && col.length > 1) return true;
+        if (topTarget?.faceUp && topTarget.color !== bottom.color && topTarget.value === bottom.value + 1) return true;
       }
     }
     return false;
   }, []);
 
+  const countAvailableMoves = useCallback((cols: Column[], fnds: Column[]): number => {
+    let moves = 0;
+    for (let c = 0; c < cols.length; c++) {
+      const col = cols[c].cards;
+      if (col.length === 0) continue;
+      const bottom = col[col.length - 1];
+      if (!bottom.faceUp) continue;
+      for (let f = 0; f < fnds.length; f++) {
+        const fCol = fnds[f].cards;
+        const topF = fCol[fCol.length - 1];
+        if ((!topF && bottom.value === 1) || (topF && topF.suit === bottom.suit && topF.value === bottom.value - 1)) {
+          moves++;
+          break;
+        }
+      }
+      for (let targetCol = 0; targetCol < cols.length; targetCol++) {
+        if (c === targetCol) continue;
+        const tCol = cols[targetCol].cards;
+        const topTarget = tCol[tCol.length - 1];
+        if (!topTarget && col.length > 1) { moves++; }
+        else if (topTarget?.faceUp && topTarget.color !== bottom.color && topTarget.value === bottom.value + 1) { moves++; }
+      }
+    }
+    return moves;
+  }, []);
+
+  const countMovesWithDepth = useCallback((cols: Column[], fnds: Column[]): number => {
+    const deepCopyCols = cols.map(col => ({
+      cards: col.cards.map(c => ({ ...c }))
+    }));
+    const deepCopyFnds = fnds.map(f => ({
+      cards: f.cards.map(c => ({ ...c }))
+    }));
+    let totalScore = 0;
+    for (let c = 0; c < deepCopyCols.length; c++) {
+      const col = deepCopyCols[c].cards;
+      if (col.length === 0) continue;
+      const bottom = col[col.length - 1];
+      if (!bottom.faceUp) continue;
+      const colCards = [...col];
+      const fndsCopy = deepCopyFnds.map(f => ({ cards: [...f.cards] }));
+      let movedThisCol = false;
+      for (let f = 0; f < 4; f++) {
+        const fCol = fndsCopy[f].cards;
+        const topF = fCol[fCol.length - 1];
+        if ((!topF && bottom.value === 1) || (topF && topF.suit === bottom.suit && topF.value === bottom.value - 1)) {
+          fndsCopy[f].cards.push(bottom);
+          colCards.pop();
+          if (colCards.length > 0 && !colCards[colCards.length - 1].faceUp) {
+            colCards[colCards.length - 1].faceUp = true;
+          }
+          totalScore += 1 + countAvailableMoves(deepCopyCols.map((oc, ocIdx) => ocIdx === c ? { cards: colCards } : oc), fndsCopy) * 0.5;
+          movedThisCol = true;
+          break;
+        }
+      }
+      if (!movedThisCol) {
+        for (let targetCol = 0; targetCol < deepCopyCols.length; targetCol++) {
+          if (c === targetCol) continue;
+          const tCol = deepCopyCols[targetCol].cards;
+          const topTarget = tCol[tCol.length - 1];
+          if ((!topTarget && colCards.length > 1) || (topTarget?.faceUp && topTarget.color !== bottom.color && topTarget.value === bottom.value + 1)) {
+            const targetCards = [...tCol, bottom];
+            const srcCards = colCards.slice(0, -1);
+            if (srcCards.length > 0 && !srcCards[srcCards.length - 1].faceUp) {
+              srcCards[srcCards.length - 1].faceUp = true;
+            }
+            totalScore += 1 + countAvailableMoves(deepCopyCols.map((oc, ocIdx) => ocIdx === c ? { cards: srcCards } : ocIdx === targetCol ? { cards: targetCards } : oc), fndsCopy) * 0.5;
+            break;
+          }
+        }
+      }
+    }
+    return Math.round(totalScore);
+  }, [countAvailableMoves]);
+
   const dealNewGame = useCallback((lv: number) => {
-    // Generate a mini deck (values 1..maxVal)
     const maxVal = getMaxVal(lv);
     const deck: Card[] = [];
     const suits: { s: Suit; c: Color }[] = [
@@ -113,33 +167,70 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
     });
 
     const makeAttempt = () => {
-      const d = [...deck].sort(() => Math.random() - 0.5);
+      const d = [...deck].sort(() => Math.random() - 0.5).map(c => ({ ...c, faceUp: false }));
       const cols: Column[] = Array.from({ length: 6 }, () => ({ cards: [] }));
-      d.forEach((card, idx) => { cols[idx % 6].cards.push(card); });
-
-      // Face-up policy: always last card face-up; for higher levels (maxVal>=9) also reveal the last 2 cards to reduce early dead-ends
+      const total = d.length;
+      const basePerCol = Math.max(2, Math.floor((total - 21) / 6));
+      let idx = 0;
+      for (let c = 0; c < 6; c++) {
+        const count = basePerCol + c + 1;
+        for (let i = 0; i < count && idx < total; i++) {
+          cols[c].cards.push(d[idx++]);
+        }
+      }
+      while (idx < total) {
+        const targetCol = idx % 6;
+        cols[targetCol].cards.push(d[idx++]);
+      }
       cols.forEach((col) => {
         if (col.cards.length === 0) return;
         col.cards[col.cards.length - 1].faceUp = true;
-        if (maxVal >= 9 && col.cards.length >= 2) col.cards[col.cards.length - 2].faceUp = true;
+        if (col.cards.length > 1 && !col.cards[col.cards.length - 2].faceUp) {
+          col.cards[col.cards.length - 2].faceUp = true;
+        }
       });
-
+      const hasAllFaceUp = cols.every(col => col.cards.length === 0 || col.cards[col.cards.length - 1].faceUp);
+      if (!hasAllFaceUp) {
+        cols.forEach(col => {
+          if (col.cards.length > 0) col.cards[col.cards.length - 1].faceUp = true;
+        });
+      }
       const fnds: Column[] = Array.from({ length: 4 }, () => ({ cards: [] }));
       return { cols, fnds };
     };
 
-    // Avoid "one or two moves then stuck" by ensuring at least one legal move at start (retry a few times)
-    let attempt = makeAttempt();
+    const minRequiredMoves = lv <= 2 ? 2 : 3 + lv * 2;
+    let bestAttempt = makeAttempt();
+    let bestMoveCount = countMovesWithDepth(bestAttempt.cols, bestAttempt.fnds);
     let tries = 0;
-    while (tries < 30 && !canMoveFromState(attempt.cols, attempt.fnds)) {
-      attempt = makeAttempt();
+    const maxTries = lv <= 2 ? 100 : Math.min(300, 100 + lv * 30);
+
+    while (tries < maxTries) {
+      const attempt = makeAttempt();
+      const moveCount = countMovesWithDepth(attempt.cols, attempt.fnds);
+      if (moveCount > bestMoveCount) {
+        bestAttempt = attempt;
+        bestMoveCount = moveCount;
+        if (bestMoveCount >= minRequiredMoves) break;
+      }
       tries++;
     }
 
-    columnsRef.current = attempt.cols;
-    foundationsRef.current = attempt.fnds;
+    if (bestMoveCount < 1) {
+      const fallbackTries = lv <= 2 ? 30 : 60 + lv * 10;
+      for (let t = 0; t < fallbackTries; t++) {
+        const attempt = makeAttempt();
+        if (canMoveFromState(attempt.cols, attempt.fnds)) {
+          bestAttempt = attempt;
+          break;
+        }
+      }
+    }
+
+    columnsRef.current = bestAttempt.cols;
+    foundationsRef.current = bestAttempt.fnds;
     setGameOverState('playing');
-  }, [canMoveFromState, getMaxVal]);
+  }, [canMoveFromState, getMaxVal, countAvailableMoves]);
 
   const initGame = useCallback(() => {
     localStorage.setItem(LEVEL_STORAGE_KEY, String(level));
@@ -147,17 +238,20 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
   }, [dealNewGame, level]);
 
   const checkStuck = useCallback(() => {
+    console.log('=== Checking if stuck ===');
     for (let c = 0; c < 6; c++) {
        const col = columnsRef.current[c].cards;
        if (col.length > 0) {
           const bottomCard = col[col.length - 1];
+          console.log(`Col ${c}: top card = ${bottomCard.value}${bottomCard.suit}, faceUp=${bottomCard.faceUp}`);
           if (bottomCard.faceUp) {
              for (let f = 0; f < 4; f++) {
                 const fCol = foundationsRef.current[f].cards;
                 const topF = fCol[fCol.length - 1];
                 if ((!topF && bottomCard.value === 1) || 
                     (topF && topF.suit === bottomCard.suit && topF.value === bottomCard.value - 1)) {
-                   return false; // Move possible
+                   console.log('Move to foundation possible');
+                   return false;
                 }
              }
           }
@@ -173,11 +267,20 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
              const tCol = columnsRef.current[targetCol].cards;
              const topTarget = tCol[tCol.length - 1];
              if (!topTarget) {
-                if (i > 0 && !sCol[i-1].faceUp) return false;
+                if (i > 0 && !sCol[i-1].faceUp) {
+                   console.log(`Move ${dragCard.value}${dragCard.suit} to empty col ${targetCol} possible`);
+                   return false;
+                }
              } else {
                 if (topTarget.color !== dragCard.color && topTarget.value === dragCard.value + 1) {
-                   if (i > 0 && !sCol[i-1].faceUp) return false;
-                   if (i === 0) return false;
+                   if (i > 0 && !sCol[i-1].faceUp) {
+                      console.log(`Move ${dragCard.value}${dragCard.suit} to ${topTarget.value}${topTarget.suit} possible`);
+                      return false;
+                   }
+                   if (i === 0) {
+                      console.log(`Move ${dragCard.value}${dragCard.suit} to ${topTarget.value}${topTarget.suit} possible`);
+                      return false;
+                   }
                    if (i > 0 && sCol[i-1].faceUp) {
                       const leftBehind = sCol[i-1];
                       for (let f = 0; f < 4; f++) {
@@ -185,6 +288,7 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
                          const tF = fC[fC.length - 1];
                          if ((!tF && leftBehind.value === 1) || 
                              (tF && tF.suit === leftBehind.suit && tF.value === leftBehind.value - 1)) {
+                            console.log(`Move ${dragCard.value}${dragCard.suit} to ${topTarget.value}${topTarget.suit} possible (left behind can go to foundation)`);
                             return false;
                          }
                       }
@@ -194,7 +298,8 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
           }
        }
     }
-    return true; // Stuck
+    console.log('NO MOVES FOUND - GAME STUCK');
+    return true;
   }, []);
 
   useEffect(() => {
@@ -229,7 +334,7 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
               card.x += ((card.targetX ?? cx) - card.x) * 0.3;
               card.y += ((card.targetY ?? cy) - card.y) * 0.3;
            }
-           cy += card.faceUp ? cardH * 0.3 : cardH * 0.1;
+           cy += card.faceUp ? cardH * 0.25 : cardH * 0.08;
         });
      });
   };
@@ -292,7 +397,7 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
     ds.cards.forEach(card => {
        card.x = x - ds.offsetX;
        card.y = currY;
-       currY += cardH * 0.3;
+       currY += cardH * 0.25;
     });
   };
 
@@ -381,14 +486,10 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
 
   const drawCard = (ctx: CanvasRenderingContext2D, card: Card) => {
      ctx.save();
-     ctx.shadowColor = 'rgba(0,0,0,0.3)';
-     ctx.shadowBlur = 8;
-     ctx.shadowOffsetY = 4;
-     
+
      ctx.fillStyle = '#fff';
      ctx.beginPath(); ctx.roundRect(card.x, card.y, cardW, cardH, 5); ctx.fill();
-     ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-     
+
      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.stroke();
 
      if (!card.faceUp) {
@@ -426,18 +527,14 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
-    if (gameOverState !== 'playing') {
-       if (gameOverState === 'win') {
-         ctx.fillStyle = 'rgba(0,0,0,0.6)';
-         ctx.fillRect(0, 0, width, height);
-         ctx.fillStyle = '#4ade80';
-         ctx.font = `bold ${Math.min(48, width * 0.06)}px sans-serif`;
-         ctx.textAlign = 'center';
-         ctx.fillText('🎊 完美解开！', width/2, height/2 - 20);
-       }
+    if (gameOverState === 'win') {
+       ctx.fillStyle = 'rgba(0,0,0,0.6)';
+       ctx.fillRect(0, 0, width, height);
+       ctx.fillStyle = '#4ade80';
+       ctx.font = `bold ${Math.min(48, width * 0.06)}px sans-serif`;
+       ctx.textAlign = 'center';
+       ctx.fillText('🎊 完美解开！', width/2, height/2 - 20);
        requestRef.current = requestAnimationFrame(animate);
        return;
     }
@@ -487,9 +584,7 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
     ctx.font = `bold ${Math.min(22, width * 0.025)}px sans-serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.shadowColor = 'black'; ctx.shadowBlur = 4;
     ctx.fillText(`关卡: ${level}`, Math.max(20, width * 0.02), Math.max(70, height * 0.1));
-    ctx.shadowBlur = 0;
 
     requestRef.current = requestAnimationFrame(animate);
   }, [width, height, visualAcuity, level, gameOverState, cardW, cardH, marginX, getMaxVal]);
@@ -585,13 +680,23 @@ export const SolitaireGame: React.FC<GameComponentProps> = ({ width, height, isP
             <div className="px-5 py-6 text-center space-y-3">
               <div className="text-3xl">🤔</div>
               <div className="text-lg font-black text-slate-800">牌局卡死了</div>
-              <div className="text-sm text-slate-500">请点击右上角刷新重新发牌</div>
-              <button
-                onClick={() => setGameOverState('playing')}
-                className="mt-2 px-6 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm"
-              >
-                知道了
-              </button>
+              <div className="flex items-center justify-center gap-3 mt-4">
+                <button
+                  onClick={() => {
+                    dealNewGame(level);
+                    setGameOverState('playing');
+                  }}
+                  className="px-6 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-blue/90 text-white font-bold text-sm shadow-sm"
+                >
+                  刷新
+                </button>
+                <button
+                  onClick={() => setGameOverState('stuck-closed')}
+                  className="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm"
+                >
+                  确定
+                </button>
+              </div>
             </div>
           </div>
         </div>

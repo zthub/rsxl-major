@@ -35,6 +35,7 @@ export const BubbleShooterGame: React.FC<GameComponentProps> = ({ width, height,
   const currentFlavorRef = useRef<number>(0);
   const scoreRef = useRef(0);
   const pointerPosRef = useRef({ x: width/2, y: height/2 });
+  const bubbleImageCacheRef = useRef<HTMLCanvasElement[]>([]);
 
   // Grid metrics
   const radius = Math.max(15, Math.min(width, height) * 0.03);
@@ -84,7 +85,7 @@ export const BubbleShooterGame: React.FC<GameComponentProps> = ({ width, height,
     // Prevent shooting horizontally or down
     if (angle > -0.1 || angle < -Math.PI + 0.1) return;
 
-    const speed = height * 0.045;
+    const speed = height * 0.03;
     projectileRef.current = {
       x: startX,
       y: startY,
@@ -183,22 +184,93 @@ export const BubbleShooterGame: React.FC<GameComponentProps> = ({ width, height,
     }
   };
 
-  const drawBubble = (ctx: CanvasRenderingContext2D, x: number, y: number, flavor: number) => {
-    ctx.beginPath();
-    ctx.arc(x, y, radius - 1, 0, Math.PI * 2);
-    ctx.fillStyle = BUBBLE_COLORS[flavor];
-    ctx.fill();
+  const initBubbleImageCache = useCallback(() => {
+    if (bubbleImageCacheRef.current.length === BUBBLE_COLORS.length) return;
 
-    // 3D glass highlight
-    const grad = ctx.createRadialGradient(x - radius*0.3, y - radius*0.3, radius*0.1, x, y, radius);
-    grad.addColorStop(0, 'rgba(255,255,255,0.8)');
-    grad.addColorStop(0.5, 'rgba(255,255,255,0)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.3)');
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const size = radius * 2 + 4;
+    const cache: HTMLCanvasElement[] = [];
+
+    for (let i = 0; i < BUBBLE_COLORS.length; i++) {
+      const offscreen = document.createElement('canvas');
+      offscreen.width = size;
+      offscreen.height = size;
+      const offCtx = offscreen.getContext('2d')!;
+      const cx = size / 2;
+      const cy = size / 2;
+      const r = radius;
+
+      offCtx.save();
+
+      const baseColor = BUBBLE_COLORS[i];
+
+      offCtx.beginPath();
+      offCtx.arc(cx, cy, r - 1, 0, Math.PI * 2);
+      offCtx.fillStyle = baseColor;
+      offCtx.fill();
+
+      const grad = offCtx.createRadialGradient(
+        cx - r * 0.35, cy - r * 0.35, r * 0.05,
+        cx, cy, r
+      );
+      grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+      grad.addColorStop(0.3, 'rgba(255,255,255,0.5)');
+      grad.addColorStop(0.6, 'rgba(255,255,255,0.1)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.35)');
+
+      offCtx.beginPath();
+      offCtx.arc(cx, cy, r - 1, 0, Math.PI * 2);
+      offCtx.fillStyle = grad;
+      offCtx.fill();
+
+      offCtx.beginPath();
+      offCtx.arc(cx - r * 0.35, cy - r * 0.35, r * 0.25, 0, Math.PI * 2);
+      const highlightGrad = offCtx.createRadialGradient(
+        cx - r * 0.35, cy - r * 0.35, 0,
+        cx - r * 0.35, cy - r * 0.35, r * 0.25
+      );
+      highlightGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+      highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      offCtx.fillStyle = highlightGrad;
+      offCtx.fill();
+
+      offCtx.beginPath();
+      offCtx.arc(cx, cy, r - 1, 0, Math.PI * 2);
+      offCtx.strokeStyle = 'rgba(255,255,255,0.35)';
+      offCtx.lineWidth = 1.5;
+      offCtx.stroke();
+
+      offCtx.beginPath();
+      offCtx.arc(cx + r * 0.3, cy + r * 0.35, r * 0.18, 0, Math.PI * 2);
+      const shadowGrad = offCtx.createRadialGradient(
+        cx + r * 0.3, cy + r * 0.35, 0,
+        cx + r * 0.3, cy + r * 0.35, r * 0.18
+      );
+      shadowGrad.addColorStop(0, 'rgba(0,0,0,0.25)');
+      shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      offCtx.fillStyle = shadowGrad;
+      offCtx.fill();
+
+      offCtx.restore();
+
+      cache.push(offscreen);
+    }
+
+    bubbleImageCacheRef.current = cache;
+  }, [radius]);
+
+  const drawBubble = (ctx: CanvasRenderingContext2D, x: number, y: number, flavor: number) => {
+    if (bubbleImageCacheRef.current[flavor]) {
+      ctx.drawImage(
+        bubbleImageCacheRef.current[flavor],
+        x - radius - 2,
+        y - radius - 2
+      );
+    } else {
+      ctx.beginPath();
+      ctx.arc(x, y, radius - 1, 0, Math.PI * 2);
+      ctx.fillStyle = BUBBLE_COLORS[flavor];
+      ctx.fill();
+    }
   };
 
   const animate = useCallback(() => {
@@ -209,8 +281,7 @@ export const BubbleShooterGame: React.FC<GameComponentProps> = ({ width, height,
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
+    initBubbleImageCache();
 
     if (gameOverState) {
        ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -272,10 +343,7 @@ export const BubbleShooterGame: React.FC<GameComponentProps> = ({ width, height,
     }
 
     // Draw grid
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 4;
     gridRef.current.forEach(b => drawBubble(ctx, b.x, b.y, b.flavor));
-    ctx.shadowBlur = 0;
 
     // Draw cannon & next bubble
     const startX = width / 2;
@@ -319,7 +387,7 @@ export const BubbleShooterGame: React.FC<GameComponentProps> = ({ width, height,
     ctx.shadowBlur = 0;
 
     requestRef.current = requestAnimationFrame(animate);
-  }, [width, height, visualAcuity, level, gameOverState, cols, hexSize, radius, rowHeight, topOffset, xOffset]);
+  }, [width, height, visualAcuity, level, gameOverState, cols, hexSize, radius, rowHeight, topOffset, xOffset, initBubbleImageCache]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -331,6 +399,7 @@ export const BubbleShooterGame: React.FC<GameComponentProps> = ({ width, height,
     canvas.style.height = `${height}px`;
     const ctx = canvas.getContext('2d');
     if (ctx) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr); }
+    bubbleImageCacheRef.current = [];
   }, [width, height]);
 
   useEffect(() => {

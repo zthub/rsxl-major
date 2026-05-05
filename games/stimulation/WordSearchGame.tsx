@@ -226,8 +226,6 @@ export const WordSearchGame: React.FC<GameComponentProps> = ({ width, height, is
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     const size = gridSizeRef.current;
     const topOffset = Math.max(70, height * 0.09);
@@ -273,7 +271,7 @@ export const WordSearchGame: React.FC<GameComponentProps> = ({ width, height, is
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        ctx.fillStyle = foundCellSet.has(key) ? '#4ade80' : selectCellSet.has(key) ? '#93c5fd' : '#e2e8f0';
+        ctx.fillStyle = foundCellSet.has(key) ? '#4ade80' : selectCellSet.has(key) ? '#93c5fd' : '#f8fafc';
         ctx.font = `bold ${w * 0.55}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -297,12 +295,12 @@ export const WordSearchGame: React.FC<GameComponentProps> = ({ width, height, is
     wordsRef.current.forEach((word, i) => {
       const found = foundRef.current.some(f => f.word === word);
       const wy = listY + 30 + i * 35;
-      ctx.fillStyle = found ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255,255,255,0.1)';
+      ctx.fillStyle = found ? 'rgba(34, 197, 94, 0.45)' : 'rgba(255,255,255,0.18)';
       ctx.beginPath();
       ctx.roundRect(listX, wy - 12, 120, 28, 6);
       ctx.fill();
 
-      ctx.fillStyle = found ? '#4ade80' : '#cbd5e1';
+      ctx.fillStyle = found ? '#4ade80' : '#f1f5f9';
       ctx.font = `bold ${Math.min(18, width * 0.02)}px sans-serif`;
       ctx.textAlign = 'left';
       ctx.fillText(`${found ? '✅' : '⬜'} ${word}`, listX + 8, wy + 6);

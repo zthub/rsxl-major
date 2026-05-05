@@ -26,6 +26,7 @@ export const JumpAdventureGame: React.FC<GameComponentProps> = ({ width, height,
   const scoreRef = useRef(0);
   const pointerXRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
+  const minPlatformYRef = useRef(height);
 
   const initGame = useCallback(() => {
     playerRef.current = { x: width / 2, y: height - 150, vx: 0, vy: -15, size: Math.max(15, width * 0.03) };
@@ -55,6 +56,7 @@ export const JumpAdventureGame: React.FC<GameComponentProps> = ({ width, height,
       y -= Math.max(60, height * 0.12); // Reduced gap
     }
     platformsRef.current = initialPlatforms;
+    minPlatformYRef.current = height;
   }, [width, height]);
 
   useEffect(() => {
@@ -92,8 +94,6 @@ export const JumpAdventureGame: React.FC<GameComponentProps> = ({ width, height,
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     if (gameOverState) {
        ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -171,21 +171,25 @@ export const JumpAdventureGame: React.FC<GameComponentProps> = ({ width, height,
 
     // Remove old platforms and generate new ones
     platformsRef.current = platformsRef.current.filter(plat => plat.y < height + 50);
-    const highestPlat = platformsRef.current.length > 0 ? Math.min(...platformsRef.current.map(pl => pl.y)) : height;
+
+    const highestPlat = minPlatformYRef.current;
     if (highestPlat > -height * 0.5) {
       const platWidth = Math.max(50, width * 0.15 * Math.max(0.4, 1 - level * 0.05));
-      
+
       const lastPlat = platformsRef.current.find(pl => pl.y === highestPlat) || platformsRef.current[0];
       let nextX = (lastPlat?.x || width/2) + (Math.random() - 0.5) * width * 0.6;
       nextX = Math.max(0, Math.min(width - platWidth, nextX));
 
+      const newY = highestPlat - Math.max(60, height * 0.12);
       platformsRef.current.push({
         x: nextX,
-        y: highestPlat - Math.max(60, height * 0.12),
+        y: newY,
         width: platWidth,
         type: Math.random() > 0.7 ? 'moving' : (Math.random() > 0.85 ? 'spring' : 'normal'),
         vx: Math.random() > 0.5 ? (Math.random() * 2 + 1 + level * 0.5) : -(Math.random() * 2 + 1 + level * 0.5)
       });
+
+      minPlatformYRef.current = newY;
     }
 
     // Game Over condition
@@ -199,13 +203,10 @@ export const JumpAdventureGame: React.FC<GameComponentProps> = ({ width, height,
     // Draw Platforms
     platformsRef.current.forEach(plat => {
       ctx.fillStyle = plat.type === 'spring' ? 'rgba(234, 179, 8, 0.9)' : (plat.type === 'moving' ? 'rgba(56, 189, 248, 0.9)' : 'rgba(34, 197, 94, 0.9)');
-      ctx.shadowColor = 'rgba(0,0,0,0.5)';
-      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.roundRect(plat.x, plat.y, plat.width, platHeight, 5);
       ctx.fill();
-      ctx.shadowBlur = 0;
-      
+
       // glossy shine
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.beginPath();
@@ -215,12 +216,9 @@ export const JumpAdventureGame: React.FC<GameComponentProps> = ({ width, height,
 
     // Draw Player
     ctx.fillStyle = '#f43f5e';
-    ctx.shadowColor = 'rgba(0,0,0,0.4)';
-    ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.roundRect(p.x, p.y, p.size, p.size, p.size * 0.3);
     ctx.fill();
-    ctx.shadowBlur = 0;
     // Eyes
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(p.x + p.size*0.3, p.y + p.size*0.3, p.size*0.15, 0, Math.PI*2); ctx.fill();
@@ -235,9 +233,7 @@ export const JumpAdventureGame: React.FC<GameComponentProps> = ({ width, height,
     ctx.fillStyle = '#fff';
     ctx.font = `bold ${Math.min(22, width * 0.025)}px sans-serif`;
     ctx.textAlign = 'left';
-    ctx.shadowColor = 'black'; ctx.shadowBlur = 6;
     ctx.fillText(`关卡: ${level}  得分: ${scoreRef.current}`, Math.max(20, width * 0.02), Math.max(70, height * 0.1));
-    ctx.shadowBlur = 0;
     
     // Hint
     if (scoreRef.current < 500) {

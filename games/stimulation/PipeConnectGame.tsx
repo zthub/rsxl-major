@@ -238,8 +238,6 @@ export const PipeConnectGame: React.FC<GameComponentProps> = ({ width, height, i
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     const rows = gridRef.current.length;
     const cols = gridRef.current[0]?.length || 0;
@@ -256,9 +254,7 @@ export const PipeConnectGame: React.FC<GameComponentProps> = ({ width, height, i
     ctx.fillStyle = '#fff';
     ctx.font = `bold ${Math.min(22, width * 0.025)}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'black'; ctx.shadowBlur = 6;
     ctx.fillText(`接水管  第${level}关  |  点击管道旋转`, width / 2, topOffset - 12);
-    ctx.shadowBlur = 0;
 
     // Legend
     const legX = width - 90;
@@ -345,12 +341,10 @@ export const PipeConnectGame: React.FC<GameComponentProps> = ({ width, height, i
       ctx.fillStyle = '#facc15';
       ctx.font = `bold ${Math.min(56, width * 0.06)}px sans-serif`;
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'black'; ctx.shadowBlur = 10;
       ctx.fillText('🎉 管道连通！', width / 2, height / 2 - 10);
       ctx.fillStyle = '#fff';
       ctx.font = `${Math.min(28, width * 0.03)}px sans-serif`;
       ctx.fillText('准备下一关...', width / 2, height / 2 + 40);
-      ctx.shadowBlur = 0;
     }
 
     requestRef.current = requestAnimationFrame(animate);

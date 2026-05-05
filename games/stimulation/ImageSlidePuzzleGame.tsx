@@ -877,6 +877,7 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
   const emptyRef = useRef(8);
   const movesRef = useRef(0);
   const animatingRef = useRef<{ fromIdx: number; toIdx: number; progress: number } | null>(null);
+  const tileCanvasCacheRef = useRef<HTMLCanvasElement[]>([]);
 
   const maxCompleted = completedLevels.length ? completedLevels[completedLevels.length - 1] : 0;
   const maxUnlocked = Math.max(FREE_SWITCH_LEVELS, clamp(maxCompleted + 1, 1, TOTAL_LEVELS));
@@ -904,7 +905,102 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
     movesRef.current = 0;
     animatingRef.current = null;
     setCompleted(false);
+    tileCanvasCacheRef.current = [];
+    setTimeout(() => buildTileCache(newLevelId), 50);
   }, [ensureImageLoaded]);
+
+  const buildTileCache = useCallback((lvl: number) => {
+    const padding = Math.max(14, width * 0.02);
+    const previewSize = clamp(Math.floor(Math.min(width, height) * (isMobile ? 0.14 : 0.16)), 52, 110);
+    const headerY = isMobile ? (padding + previewSize + 26) : Math.max(86, height * 0.11);
+    const topOffset = headerY;
+    const availSize = Math.min(width - padding * 2, (height - topOffset - height * (isMobile ? 0.08 : 0.12)));
+    const cellSize = availSize / GRID_SIZE;
+    const gap = 5;
+    const w = cellSize - gap * 2;
+
+    const img = imgCacheRef.current.get(lvl);
+    const ready = img && img.complete && img.naturalWidth > 0;
+    const srcCell = Math.floor(Math.min(img?.naturalWidth || 300, img?.naturalHeight || 300) / GRID_SIZE);
+    const srcX0 = Math.floor(((img?.naturalWidth || 300) - srcCell * GRID_SIZE) / 2);
+    const srcY0 = Math.floor(((img?.naturalHeight || 300) - srcCell * GRID_SIZE) / 2);
+
+    const caches: HTMLCanvasElement[] = [];
+    for (let idx = 0; idx < 9; idx++) {
+      const tileCanvas = document.createElement('canvas');
+      tileCanvas.width = w * 2;
+      tileCanvas.height = w * 2;
+      const tctx = tileCanvas.getContext('2d');
+      if (!tctx) { caches.push(tileCanvas); continue; }
+      tctx.scale(2, 2);
+
+      if (idx === 8) {
+        tctx.fillStyle = 'rgba(0,0,0,0.25)';
+        tctx.beginPath();
+        tctx.roundRect(0, 0, w, w, 14);
+        tctx.fill();
+        tctx.strokeStyle = 'rgba(255,255,255,0.18)';
+        tctx.lineWidth = 2;
+        tctx.stroke();
+
+        const label = 9;
+        const badgeSize = Math.max(18, w * 0.28);
+        tctx.fillStyle = 'rgba(255,255,255,0.12)';
+        tctx.beginPath();
+        tctx.arc(w - badgeSize / 2 - 6, w - badgeSize / 2 - 6, badgeSize / 2, 0, Math.PI * 2);
+        tctx.fill();
+        tctx.fillStyle = 'rgba(255,255,255,0.55)';
+        tctx.font = `900 ${Math.max(12, badgeSize * 0.48)}px ui-sans-serif, system-ui, -apple-system`;
+        tctx.textAlign = 'center';
+        tctx.textBaseline = 'middle';
+        tctx.fillText(String(label), w - badgeSize / 2 - 6, w - badgeSize / 2 - 6);
+      } else {
+        tctx.save();
+        tctx.beginPath();
+        tctx.roundRect(0, 0, w, w, 14);
+        tctx.clip();
+
+        if (ready) {
+          const val = idx + 1;
+          const sr = Math.floor((val - 1) / GRID_SIZE);
+          const sc = (val - 1) % GRID_SIZE;
+          const sx = srcX0 + sc * srcCell;
+          const sy = srcY0 + sr * srcCell;
+          tctx.drawImage(img, sx, sy, srcCell, srcCell, 0, 0, w, w);
+        } else {
+          tctx.fillStyle = 'rgba(255,255,255,0.18)';
+          tctx.fillRect(0, 0, w, w);
+          tctx.fillStyle = 'rgba(255,255,255,0.65)';
+          tctx.font = `800 ${Math.max(18, w * 0.28)}px ui-sans-serif, system-ui, -apple-system`;
+          tctx.textAlign = 'center';
+          tctx.textBaseline = 'middle';
+          tctx.fillText(String(idx + 1), w / 2, w / 2);
+        }
+        tctx.restore();
+
+        tctx.strokeStyle = 'rgba(255,255,255,0.28)';
+        tctx.lineWidth = 2;
+        tctx.beginPath();
+        tctx.roundRect(0, 0, w, w, 14);
+        tctx.stroke();
+
+        const label = idx + 1;
+        const badgeSize = Math.max(18, w * 0.28);
+        tctx.fillStyle = 'rgba(0,0,0,0.35)';
+        tctx.beginPath();
+        tctx.arc(w - badgeSize / 2 - 6, w - badgeSize / 2 - 6, badgeSize / 2, 0, Math.PI * 2);
+        tctx.fill();
+        tctx.fillStyle = 'rgba(255,255,255,0.95)';
+        tctx.font = `900 ${Math.max(12, badgeSize * 0.48)}px ui-sans-serif, system-ui, -apple-system`;
+        tctx.textAlign = 'center';
+        tctx.textBaseline = 'middle';
+        tctx.fillText(String(label), w - badgeSize / 2 - 6, w - badgeSize / 2 - 6);
+      }
+
+      caches.push(tileCanvas);
+    }
+    tileCanvasCacheRef.current = caches;
+  }, [width, height, isMobile]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -1014,10 +1110,7 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
     ctx.fillStyle = '#fff';
     ctx.font = `900 ${Math.min(24, width * 0.028)}px ui-sans-serif, system-ui, -apple-system`;
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.75)';
-    ctx.shadowBlur = 8;
     ctx.fillText(`第${levelId}关  |  步数: ${movesRef.current}`, width / 2, topOffset - 18);
-    ctx.shadowBlur = 0;
 
     // Full image preview (place just left of the board on mobile/compact)
     const img = imgCacheRef.current.get(levelId);
@@ -1026,16 +1119,11 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
     const previewX = idealPreviewX >= padding ? idealPreviewX : padding;
     const previewY = idealPreviewX >= padding ? gridY : padding;
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.55)';
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetY = 3;
     ctx.fillStyle = 'rgba(255,255,255,0.10)';
     ctx.beginPath();
     // @ts-expect-error roundRect supported in modern browsers
     ctx.roundRect(previewX, previewY, previewSize, previewSize, 14);
     ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
     ctx.beginPath();
     // @ts-expect-error roundRect supported in modern browsers
     ctx.roundRect(previewX, previewY, previewSize, previewSize, 14);
@@ -1046,10 +1134,7 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
       const srcY0Preview = Math.floor((img.naturalHeight - srcSizePreview) / 2);
       ctx.drawImage(img, srcX0Preview, srcY0Preview, srcSizePreview, srcSizePreview, previewX, previewY, previewSize, previewSize);
     } else {
-      const g = ctx.createLinearGradient(previewX, previewY, previewX + previewSize, previewY + previewSize);
-      g.addColorStop(0, 'rgba(255,255,255,0.22)');
-      g.addColorStop(1, 'rgba(255,255,255,0.06)');
-      ctx.fillStyle = g;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
       ctx.fillRect(previewX, previewY, previewSize, previewSize);
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.font = `900 ${Math.max(14, previewSize * 0.22)}px ui-sans-serif, system-ui, -apple-system`;
@@ -1068,10 +1153,7 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
     ctx.font = `800 ${Math.max(11, previewSize * 0.14)}px ui-sans-serif, system-ui, -apple-system`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.shadowColor = 'rgba(0,0,0,0.65)';
-    ctx.shadowBlur = 6;
     ctx.fillText('完整图', previewX + 8, previewY + Math.max(16, previewSize * 0.18));
-    ctx.shadowBlur = 0;
 
     // Board background
     ctx.fillStyle = 'rgba(15,23,42,0.25)';
@@ -1080,11 +1162,9 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
     ctx.roundRect(gridX - 10, gridY - 10, availSize + 20, availSize + 20, 18);
     ctx.fill();
 
-    // Image slicing params
-    const srcSize = ready ? Math.min(img.naturalWidth, img.naturalHeight) : 0;
-    const srcX0 = ready ? Math.floor((img.naturalWidth - srcSize) / 2) : 0;
-    const srcY0 = ready ? Math.floor((img.naturalHeight - srcSize) / 2) : 0;
-    const srcCell = ready ? srcSize / GRID_SIZE : 0;
+    const w = cellSize - gap * 2;
+    const caches = tileCanvasCacheRef.current;
+    const useCache = caches.length === 9;
 
     for (let r = 0; r < GRID_SIZE; r++) {
       for (let c = 0; c < GRID_SIZE; c++) {
@@ -1101,118 +1181,111 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
           drawY = gridY + (fromR + (r - fromR) * p) * cellSize + gap;
         }
 
-        const w = cellSize - gap * 2;
-        if (val === 0) {
-          ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        if (useCache) {
+          const cacheIdx = val === 0 ? 8 : val - 1;
+          if (caches[cacheIdx]) {
+            ctx.drawImage(caches[cacheIdx], drawX, drawY, w, w);
+          }
+        } else {
+          if (val === 0) {
+            ctx.fillStyle = 'rgba(0,0,0,0.25)';
+            ctx.beginPath();
+            // @ts-expect-error roundRect supported in modern browsers
+            ctx.roundRect(drawX, drawY, w, w, 14);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            const label = 9;
+            const badgeSize = Math.max(18, w * 0.28);
+            ctx.save();
+            ctx.fillStyle = 'rgba(255,255,255,0.12)';
+            ctx.beginPath();
+            ctx.arc(drawX + w - badgeSize / 2 - 6, drawY + w - badgeSize / 2 - 6, badgeSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            ctx.font = `900 ${Math.max(12, badgeSize * 0.48)}px ui-sans-serif, system-ui, -apple-system`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(label), drawX + w - badgeSize / 2 - 6, drawY + w - badgeSize / 2 - 6);
+            ctx.restore();
+            continue;
+          }
+
+          ctx.save();
           ctx.beginPath();
           // @ts-expect-error roundRect supported in modern browsers
           ctx.roundRect(drawX, drawY, w, w, 14);
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+          ctx.clip();
+
+          if (ready) {
+            const srcIndex = val - 1;
+            const sr = Math.floor(srcIndex / GRID_SIZE);
+            const sc = srcIndex % GRID_SIZE;
+            const sx = srcX0 + sc * srcCell;
+            const sy = srcY0 + sr * srcCell;
+            ctx.drawImage(img, sx, sy, srcCell, srcCell, drawX, drawY, w, w);
+          } else {
+            ctx.fillStyle = 'rgba(255,255,255,0.18)';
+            ctx.fillRect(drawX, drawY, w, w);
+            ctx.fillStyle = 'rgba(255,255,255,0.65)';
+            ctx.font = `800 ${Math.max(18, w * 0.28)}px ui-sans-serif, system-ui, -apple-system`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(val), drawX + w / 2, drawY + w / 2);
+          }
+
+          ctx.restore();
+
+          ctx.strokeStyle = 'rgba(255,255,255,0.28)';
           ctx.lineWidth = 2;
+          ctx.beginPath();
+          // @ts-expect-error roundRect supported in modern browsers
+          ctx.roundRect(drawX, drawY, w, w, 14);
           ctx.stroke();
 
-          // Number label for empty tile (shows as 9)
-          const label = 9;
+          const label = val;
           const badgeSize = Math.max(18, w * 0.28);
+          const bx = drawX + w - badgeSize / 2 - 6;
+          const by = drawY + w - badgeSize / 2 - 6;
           ctx.save();
-          ctx.shadowColor = 'rgba(0,0,0,0.55)';
-          ctx.shadowBlur = 6;
-          ctx.fillStyle = 'rgba(255,255,255,0.12)';
+          ctx.fillStyle = 'rgba(0,0,0,0.35)';
           ctx.beginPath();
-          ctx.arc(drawX + w - badgeSize / 2 - 6, drawY + w - badgeSize / 2 - 6, badgeSize / 2, 0, Math.PI * 2);
+          ctx.arc(bx, by, badgeSize / 2, 0, Math.PI * 2);
           ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          ctx.fillStyle = 'rgba(255,255,255,0.95)';
           ctx.font = `900 ${Math.max(12, badgeSize * 0.48)}px ui-sans-serif, system-ui, -apple-system`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(String(label), drawX + w - badgeSize / 2 - 6, drawY + w - badgeSize / 2 - 6);
+          ctx.fillText(String(label), bx, by);
           ctx.restore();
-          continue;
         }
-
-        ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.55)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetY = 3;
-        ctx.beginPath();
-        // @ts-expect-error roundRect supported in modern browsers
-        ctx.roundRect(drawX, drawY, w, w, 14);
-        ctx.clip();
-
-        if (ready) {
-          const srcIndex = val - 1; // 0..7
-          const sr = Math.floor(srcIndex / GRID_SIZE);
-          const sc = srcIndex % GRID_SIZE;
-          const sx = srcX0 + sc * srcCell;
-          const sy = srcY0 + sr * srcCell;
-          ctx.drawImage(img, sx, sy, srcCell, srcCell, drawX, drawY, w, w);
-        } else {
-          // Fallback placeholder while SVG is loading
-          const g = ctx.createLinearGradient(drawX, drawY, drawX + w, drawY + w);
-          g.addColorStop(0, 'rgba(255,255,255,0.25)');
-          g.addColorStop(1, 'rgba(255,255,255,0.05)');
-          ctx.fillStyle = g;
-          ctx.fillRect(drawX, drawY, w, w);
-          ctx.fillStyle = 'rgba(255,255,255,0.65)';
-          ctx.font = `800 ${Math.max(18, w * 0.28)}px ui-sans-serif, system-ui, -apple-system`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(String(val), drawX + w / 2, drawY + w / 2);
-        }
-
-        ctx.restore();
-
-        // outline
-        ctx.strokeStyle = 'rgba(255,255,255,0.28)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        // @ts-expect-error roundRect supported in modern browsers
-        ctx.roundRect(drawX, drawY, w, w, 14);
-        ctx.stroke();
-
-        // Bottom-right number label (tile index 1..8, based on source piece order)
-        const label = val; // 1..8
-        const badgeSize = Math.max(18, w * 0.28);
-        const bx = drawX + w - badgeSize / 2 - 6;
-        const by = drawY + w - badgeSize / 2 - 6;
-        ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.55)';
-        ctx.shadowBlur = 7;
-        ctx.fillStyle = 'rgba(0,0,0,0.35)';
-        ctx.beginPath();
-        ctx.arc(bx, by, badgeSize / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(255,255,255,0.95)';
-        ctx.font = `900 ${Math.max(12, badgeSize * 0.48)}px ui-sans-serif, system-ui, -apple-system`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(String(label), bx, by);
-        ctx.restore();
       }
     }
 
     // Completed overlay
     if (completed) {
-      // Fill the 9th piece to show the complete picture
       const emptyIdx = emptyRef.current;
       const er = Math.floor(emptyIdx / GRID_SIZE);
       const ec = emptyIdx % GRID_SIZE;
       const w = cellSize - gap * 2;
       const fx = gridX + ec * cellSize + gap;
       const fy = gridY + er * cellSize + gap;
-      if (ready) {
-        const srcIndex = 8; // 9th slice
+
+      if (useCache && caches[8]) {
+        ctx.drawImage(caches[8], fx, fy, w, w);
+      } else if (ready) {
+        const srcSize = Math.min(img.naturalWidth, img.naturalHeight);
+        const srcX0 = Math.floor((img.naturalWidth - srcSize) / 2);
+        const srcY0 = Math.floor((img.naturalHeight - srcSize) / 2);
+        const srcCell = srcSize / GRID_SIZE;
+        const srcIndex = 8;
         const sr = Math.floor(srcIndex / GRID_SIZE);
         const sc = srcIndex % GRID_SIZE;
         const sx = srcX0 + sc * srcCell;
         const sy = srcY0 + sr * srcCell;
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.55)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetY = 3;
         ctx.beginPath();
         // @ts-expect-error roundRect supported in modern browsers
         ctx.roundRect(fx, fy, w, w, 14);
@@ -1234,20 +1307,15 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
       const cardY = height / 2 - cardH / 2 - 8;
       ctx.save();
       ctx.fillStyle = 'rgba(15,23,42,0.35)';
-      ctx.shadowColor = 'rgba(0,0,0,0.55)';
-      ctx.shadowBlur = 16;
       ctx.beginPath();
       // @ts-expect-error roundRect supported in modern browsers
       ctx.roundRect(cardX, cardY, cardW, cardH, 22);
       ctx.fill();
-      ctx.shadowBlur = 0;
       ctx.strokeStyle = 'rgba(255,255,255,0.18)';
       ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0,0,0,0.85)';
-      ctx.shadowBlur = 14;
       ctx.fillStyle = '#facc15';
       ctx.font = `900 ${Math.min(54, width * 0.06)}px ui-sans-serif, system-ui, -apple-system`;
       ctx.fillText(`完成第 ${levelId} 关！`, width / 2, cardY + cardH * 0.44);

@@ -135,9 +135,6 @@ export const MemoryCardGame: React.FC<GameComponentProps> = ({ width, height, is
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
-
     const { cols, rows } = getGridSize();
     const padding = 20;
     const topOffset = Math.max(100, height * 0.12);
@@ -155,10 +152,7 @@ export const MemoryCardGame: React.FC<GameComponentProps> = ({ width, height, is
     ctx.fillStyle = '#fff';
     ctx.font = `bold ${Math.min(24, width * 0.03)}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'black';
-    ctx.shadowBlur = 6;
     ctx.fillText(`第 ${level} 关  |  已匹配: ${matchedRef.current}/${cardsRef.current.length}`, width / 2, topOffset - 20);
-    ctx.shadowBlur = 0;
 
     // Draw cards
     cardsRef.current.forEach((card, idx) => {
@@ -187,12 +181,9 @@ export const MemoryCardGame: React.FC<GameComponentProps> = ({ width, height, is
         ctx.beginPath();
         ctx.roundRect(cx, cy, cardSize, cardSize, 12);
         ctx.fill();
-        ctx.shadowColor = 'rgba(0,0,0,0.3)';
-        ctx.shadowBlur = 10;
         ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
         ctx.lineWidth = 3;
         ctx.stroke();
-        ctx.shadowBlur = 0;
 
         ctx.font = `${cardSize * 0.5}px sans-serif`;
         ctx.textAlign = 'center';
@@ -204,12 +195,9 @@ export const MemoryCardGame: React.FC<GameComponentProps> = ({ width, height, is
         ctx.beginPath();
         ctx.roundRect(cx, cy, cardSize, cardSize, 12);
         ctx.fill();
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur = 8;
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.lineWidth = 2;
         ctx.stroke();
-        ctx.shadowBlur = 0;
 
         // Star pattern on back
         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
@@ -227,8 +215,6 @@ export const MemoryCardGame: React.FC<GameComponentProps> = ({ width, height, is
       ctx.fillStyle = '#facc15';
       ctx.font = `bold ${Math.min(60, width * 0.06)}px sans-serif`;
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'black';
-      ctx.shadowBlur = 10;
       ctx.fillText('🎉 过关！', width / 2, height / 2 - 10);
       ctx.fillStyle = '#fff';
       ctx.font = `${Math.min(28, width * 0.03)}px sans-serif`;

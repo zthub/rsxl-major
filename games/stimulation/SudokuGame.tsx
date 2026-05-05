@@ -225,8 +225,6 @@ export const SudokuGame: React.FC<GameComponentProps> = ({ width, height, isPlay
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     const size = sizeRef.current;
     const topOffset = Math.max(70, height * 0.09);
@@ -255,18 +253,18 @@ export const SudokuGame: React.FC<GameComponentProps> = ({ width, height, isPlay
 
         // Cell background
         if (isSelected) {
-          ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
         } else if (Math.floor(r / subSize) % 2 === Math.floor(c / subSize) % 2) {
-          ctx.fillStyle = 'rgba(255,255,255,0.12)';
+          ctx.fillStyle = 'rgba(255,255,255,0.18)';
         } else {
-          ctx.fillStyle = 'rgba(255,255,255,0.06)';
+          ctx.fillStyle = 'rgba(255,255,255,0.1)';
         }
         ctx.fillRect(cx, cy, cellSize, cellSize);
 
         // Grid lines
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(cx, cy, cellSize, cellSize);
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(cx + 0.75, cy + 0.75, cellSize - 1.5, cellSize - 1.5);
 
         // Number
         const val = gridRef.current[r]?.[c];
@@ -283,7 +281,7 @@ export const SudokuGame: React.FC<GameComponentProps> = ({ width, height, isPlay
     }
 
     // Thick lines for sub-grids
-    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
     ctx.lineWidth = 3;
     for (let i = 0; i <= size; i += subSize) {
       ctx.beginPath();
@@ -304,11 +302,11 @@ export const SudokuGame: React.FC<GameComponentProps> = ({ width, height, isPlay
 
     for (let i = 0; i < size; i++) {
       const px = padStartX + i * (padCellSize + 6);
-      ctx.fillStyle = selectedRef.current ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.3)';
+      ctx.fillStyle = selectedRef.current ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.45)';
       ctx.beginPath();
       ctx.roundRect(px, padY, padCellSize, padCellSize, 8);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.7)';
       ctx.lineWidth = 2;
       ctx.stroke();
 

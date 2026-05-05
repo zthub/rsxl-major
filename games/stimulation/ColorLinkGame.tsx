@@ -128,8 +128,6 @@ export const ColorLinkGame: React.FC<GameComponentProps> = ({ width, height, isP
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     const topOffset = Math.max(80, height * 0.1);
     const ballRadius = Math.min(30, width * 0.03);
@@ -138,9 +136,7 @@ export const ColorLinkGame: React.FC<GameComponentProps> = ({ width, height, isP
     ctx.fillStyle = '#fff';
     ctx.font = `bold ${Math.min(24, width * 0.03)}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'black'; ctx.shadowBlur = 6;
     ctx.fillText(`第 ${level} 关  |  连线: ${connectionsRef.current.filter(Boolean).length}/${pairsRef.current.length}`, width / 2, topOffset);
-    ctx.shadowBlur = 0;
 
     // Draw connections
     pairsRef.current.forEach((pair, i) => {
@@ -148,13 +144,10 @@ export const ColorLinkGame: React.FC<GameComponentProps> = ({ width, height, isP
         const color = COLORS[pair.left.colorIdx];
         ctx.strokeStyle = color.hex;
         ctx.lineWidth = 6;
-        ctx.shadowColor = color.hex;
-        ctx.shadowBlur = 15;
         ctx.beginPath();
         ctx.moveTo(pair.left.x, pair.left.y);
         ctx.lineTo(pair.right.x, pair.right.y);
         ctx.stroke();
-        ctx.shadowBlur = 0;
       }
     });
 
@@ -164,12 +157,6 @@ export const ColorLinkGame: React.FC<GameComponentProps> = ({ width, height, isP
 
       for (const ball of [pair.left, pair.right]) {
         const isSelected = firstBallRef.current?.pairIdx === i;
-
-        // Glow for selected
-        if (isSelected) {
-          ctx.shadowColor = color.hex;
-          ctx.shadowBlur = 25;
-        }
 
         // Ball background
         ctx.fillStyle = connectionsRef.current[i] ? color.hex : 'rgba(255,255,255,0.9)';
@@ -181,7 +168,6 @@ export const ColorLinkGame: React.FC<GameComponentProps> = ({ width, height, isP
         ctx.strokeStyle = color.hex;
         ctx.lineWidth = isSelected ? 5 : 3;
         ctx.stroke();
-        ctx.shadowBlur = 0;
 
         // Color fill
         if (!connectionsRef.current[i]) {
@@ -214,7 +200,6 @@ export const ColorLinkGame: React.FC<GameComponentProps> = ({ width, height, isP
       ctx.fillStyle = '#facc15';
       ctx.font = `bold ${Math.min(56, width * 0.06)}px sans-serif`;
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'black'; ctx.shadowBlur = 10;
       ctx.fillText('🎉 完美连线！', width / 2, height / 2 - 10);
       ctx.fillStyle = '#fff';
       ctx.font = `${Math.min(28, width * 0.03)}px sans-serif`;

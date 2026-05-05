@@ -185,28 +185,44 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
     trailRef.current = [];
   };
 
-  // Fruit Drawing Helpers
+  // Fruit Drawing Helpers - Redesigned for high recognition
   const drawApple = (ctx: CanvasRenderingContext2D, r: number) => {
-     ctx.fillStyle = '#ef4444';
-     ctx.beginPath(); ctx.arc(-r*0.2, 0, r*0.8, 0, Math.PI*2); ctx.fill();
-     ctx.beginPath(); ctx.arc(r*0.2, 0, r*0.8, 0, Math.PI*2); ctx.fill();
-     ctx.strokeStyle = '#65a30d'; ctx.lineWidth = r*0.15; ctx.beginPath(); ctx.moveTo(0, -r*0.6); ctx.quadraticCurveTo(r*0.2, -r*1.1, r*0.4, -r*0.9); ctx.stroke();
+     ctx.fillStyle = '#dc2626';
+     ctx.beginPath(); ctx.arc(0, r*0.1, r*0.85, 0, Math.PI*2); ctx.fill();
+     ctx.fillStyle = '#fca5a5';
+     ctx.beginPath(); ctx.ellipse(-r*0.25, -r*0.25, r*0.2, r*0.35, -0.3, 0, Math.PI*2); ctx.fill();
+     ctx.fillStyle = '#65a30d';
+     ctx.lineWidth = r*0.12;
+     ctx.lineCap = 'round';
+     ctx.beginPath(); ctx.moveTo(0, -r*0.75); ctx.quadraticCurveTo(r*0.15, -r*1.05, r*0.35, -r*0.85); ctx.stroke();
+     ctx.beginPath(); ctx.moveTo(0, -r*0.72); ctx.quadraticCurveTo(-r*0.12, -r*0.95, -r*0.2, -r*0.8); ctx.stroke();
+     ctx.fillStyle = '#22c55e';
+     ctx.beginPath(); ctx.ellipse(r*0.28, -r*0.82, r*0.18, r*0.1, 0.4, 0, Math.PI*2); ctx.fill();
   };
 
   const drawWatermelon = (ctx: CanvasRenderingContext2D, r: number) => {
-     ctx.fillStyle = '#166534'; // Dark green
+     ctx.fillStyle = '#15803d';
      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-     ctx.strokeStyle = '#4ade80'; // Light green zig-zags
-     ctx.lineWidth = r * 0.15;
-     ctx.lineCap = 'round';
-     ctx.lineJoin = 'round';
-     for(let i=0; i<3; i++) {
+     ctx.fillStyle = '#4ade80'; ctx.beginPath(); ctx.arc(0, 0, r*0.88, 0, Math.PI*2); ctx.fill();
+     ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(0, 0, r*0.82, 0, Math.PI*2); ctx.fill();
+     ctx.strokeStyle = '#166534'; ctx.lineWidth = r*0.1; ctx.lineCap = 'round';
+     for(let i=0; i<6; i++) {
+        let angle = i * Math.PI / 3 + 0.3;
+        let innerR = r * 0.78;
+        let outerR = r * 0.88;
         ctx.beginPath();
-        let angle = i * Math.PI*2/3;
-        for(let step=-r*0.8; step<r*0.8; step+=r*0.4) {
-           let offset = (Math.abs(step) % (r*0.8)) === 0 ? r*0.1 : -r*0.1;
-           ctx.lineTo(Math.cos(angle)*step + Math.sin(angle)*offset, Math.sin(angle)*step - Math.cos(angle)*offset);
-        }
+        ctx.moveTo(Math.cos(angle)*innerR, Math.sin(angle)*innerR);
+        ctx.lineTo(Math.cos(angle)*outerR, Math.sin(angle)*outerR);
+        ctx.stroke();
+     }
+     ctx.strokeStyle = '#166534'; ctx.lineWidth = r*0.06;
+     for(let i=0; i<6; i++) {
+        let angle = i * Math.PI / 3 + 0.8;
+        let innerR = r * 0.8;
+        let outerR = r * 0.86;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(angle)*innerR, Math.sin(angle)*innerR);
+        ctx.lineTo(Math.cos(angle)*outerR, Math.sin(angle)*outerR);
         ctx.stroke();
      }
   };
@@ -214,110 +230,148 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
   const drawOrange = (ctx: CanvasRenderingContext2D, r: number) => {
      ctx.fillStyle = '#f97316';
      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-     ctx.fillStyle = '#fdba74';
-     for(let i=0; i<8; i++) {
-        let a = i * Math.PI/4;
-        ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.5, Math.sin(a)*r*0.5, r*0.05, 0, Math.PI*2); ctx.fill();
+     ctx.fillStyle = 'rgba(255,255,255,0.3)';
+     for(let i=0; i<10; i++) {
+        let a = i * Math.PI/5 + 0.3;
+        let dist = r * (0.4 + (i%2)*0.25);
+        ctx.beginPath(); ctx.arc(Math.cos(a)*dist, Math.sin(a)*dist, r*0.06, 0, Math.PI*2); ctx.fill();
      }
+     ctx.fillStyle = '#22c55e';
+     ctx.beginPath(); ctx.ellipse(r*0.05, -r*0.9, r*0.15, r*0.08, 0.3, 0, Math.PI*2); ctx.fill();
   };
 
   const drawPineapple = (ctx: CanvasRenderingContext2D, r: number) => {
-     ctx.save(); ctx.scale(0.8, 1.2);
+     ctx.save(); ctx.scale(0.75, 1.15);
      ctx.fillStyle = '#eab308';
      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-     ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = r*0.05;
-     for(let i=-r; i<=r; i+=r*0.4) {
-        ctx.beginPath(); ctx.moveTo(i, -r); ctx.lineTo(i+r, r); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(i, -r); ctx.lineTo(i-r, r); ctx.stroke();
+     ctx.strokeStyle = '#a16207'; ctx.lineWidth = r*0.06;
+     for(let row=-r*0.7; row<=r*0.7; row+=r*0.32) {
+        let offset = ((row + r*0.7) % (r*0.64)) < r*0.32 ? r*0.18 : 0;
+        for(let col=-r*0.5+offset; col<=r*0.5; col+=r*0.36) {
+           ctx.beginPath(); ctx.arc(col, row, r*0.07, 0, Math.PI*2); ctx.stroke();
+        }
      }
      ctx.restore();
-     ctx.fillStyle = '#4ade80';
-     ctx.beginPath(); ctx.moveTo(-r*0.3, -r*0.9); ctx.lineTo(0, -r*1.5); ctx.lineTo(r*0.3, -r*0.9); ctx.fill();
+     ctx.fillStyle = '#16a34a';
+     ctx.beginPath(); ctx.moveTo(-r*0.35, -r*1.0); ctx.lineTo(-r*0.15, -r*1.45); ctx.lineTo(0, -r*1.15);
+     ctx.lineTo(r*0.15, -r*1.5); ctx.lineTo(r*0.35, -r*1.05); ctx.closePath(); ctx.fill();
+     ctx.fillStyle = '#15803d';
+     ctx.beginPath(); ctx.moveTo(-r*0.18, -r*1.18); ctx.lineTo(0, -r*1.42); ctx.lineTo(r*0.18, -r*1.2); ctx.closePath(); ctx.fill();
   };
 
   const drawKiwi = (ctx: CanvasRenderingContext2D, r: number) => {
-     ctx.save(); ctx.scale(0.8, 1);
-     ctx.fillStyle = '#78350f'; // brown
+     ctx.save(); ctx.scale(0.82, 1);
+     ctx.fillStyle = '#78350f';
      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
      ctx.restore();
+     ctx.fillStyle = '#fef08a';
+     ctx.beginPath(); ctx.arc(0, 0, r*0.92, 0, Math.PI*2); ctx.fill();
+     ctx.fillStyle = '#84cc16';
+     ctx.beginPath(); ctx.arc(0, 0, r*0.78, 0, Math.PI*2); ctx.fill();
+     ctx.fillStyle = '#fff';
+     ctx.beginPath(); ctx.arc(0, 0, r*0.35, 0, Math.PI*2); ctx.fill();
+     ctx.fillStyle = '#451a03';
+     for(let i=0; i<8; i++) {
+        let a = i * Math.PI/4 + 0.2;
+        ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.48, Math.sin(a)*r*0.48, r*0.045, 0, Math.PI*2); ctx.fill();
+     }
   };
 
   const drawCoconut = (ctx: CanvasRenderingContext2D, r: number) => {
-     ctx.fillStyle = '#451a03'; // dark brown
+     ctx.save(); ctx.scale(0.88, 1);
+     ctx.fillStyle = '#451a03';
      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-     ctx.fillStyle = '#78350f';
-     ctx.beginPath(); ctx.arc(-r*0.3, -r*0.3, r*0.2, 0, Math.PI*2); ctx.fill();
-     ctx.beginPath(); ctx.arc(r*0.3, -r*0.3, r*0.2, 0, Math.PI*2); ctx.fill();
-     ctx.beginPath(); ctx.arc(0, 0, r*0.2, 0, Math.PI*2); ctx.fill();
+     ctx.strokeStyle = '#292524'; ctx.lineWidth = r*0.06;
+     ctx.beginPath(); ctx.ellipse(0, 0, r*0.82, r*0.94, 0, 0, Math.PI*2); ctx.stroke();
+     ctx.restore();
+     ctx.fillStyle = '#1c1917';
+     ctx.beginPath(); ctx.ellipse(-r*0.28, -r*0.15, r*0.17, r*0.22, -0.2, 0, Math.PI*2); ctx.fill();
+     ctx.beginPath(); ctx.ellipse(r*0.26, -r*0.12, r*0.16, r*0.21, 0.2, 0, Math.PI*2); ctx.fill();
+     ctx.beginPath(); ctx.ellipse(0, r*0.28, r*0.14, r*0.18, 0, 0, Math.PI*2); ctx.fill();
+     ctx.fillStyle = '#292524';
+     ctx.beginPath(); ctx.arc(-r*0.28, -r*0.15, r*0.07, 0, Math.PI*2); ctx.fill();
+     ctx.beginPath(); ctx.arc(r*0.26, -r*0.12, r*0.065, 0, Math.PI*2); ctx.fill();
+     ctx.beginPath(); ctx.arc(0, r*0.28, r*0.06, 0, Math.PI*2); ctx.fill();
   };
 
   const drawHalf = (ctx: CanvasRenderingContext2D, type: ItemType, r: number, isRight: boolean) => {
      ctx.save();
      ctx.beginPath();
-     if (isRight) { ctx.rect(0, -r*1.5, r*1.5, r*3); } 
+     if (isRight) { ctx.rect(0, -r*1.5, r*1.5, r*3); }
      else { ctx.rect(-r*1.5, -r*1.5, r*1.5, r*3); }
      ctx.clip();
-     
+
      if (type === 'watermelon') {
-        ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(0, 0, r*0.9, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(0, 0, r*0.8, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#111';
+        ctx.fillStyle = '#15803d'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#4ade80'; ctx.beginPath(); ctx.arc(0, 0, r*0.9, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(0, 0, r*0.82, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fca5a5'; ctx.beginPath(); ctx.arc(0, -r*0.15, r*0.25, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#1c1917';
         const seedSide = isRight ? 1 : -1;
         for(let i=0; i<3; i++) {
-           ctx.beginPath(); ctx.arc(seedSide*r*0.3, (i-1)*r*0.3, r*0.05, 0, Math.PI*2); ctx.fill();
-           ctx.beginPath(); ctx.arc(seedSide*r*0.5, (i-0.5)*r*0.3, r*0.05, 0, Math.PI*2); ctx.fill();
+           ctx.beginPath(); ctx.ellipse(seedSide*r*0.28, (i-1)*r*0.32, r*0.055, r*0.038, 0, 0, Math.PI*2); ctx.fill();
+           ctx.beginPath(); ctx.ellipse(seedSide*r*0.48, (i-0.5)*r*0.32, r*0.05, r*0.035, 0, 0, Math.PI*2); ctx.fill();
         }
      }
      else if (type === 'orange') {
         ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, 0, r*0.9, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#f97316';
-        for(let i=0; i<6; i++) {
-           let a = i * Math.PI*2/6;
-           ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0, r*0.85, a, a+Math.PI*2/6 - 0.1); ctx.fill();
+        ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, 0, r*0.88, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fbbf24';
+        for(let i=0; i<8; i++) {
+           let a = i * Math.PI*2/8;
+           ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0, r*0.8, a, a+Math.PI*2/8 - 0.12); ctx.fill();
         }
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, r*0.18, 0, Math.PI*2); ctx.fill();
      }
      else if (type === 'pineapple') {
-        ctx.save(); ctx.scale(0.8, 1.2);
-        ctx.fillStyle = '#ca8a04'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, 0, r*0.9, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.arc(0, 0, r*0.5, 0, Math.PI*2); ctx.fill();
+        ctx.save(); ctx.scale(0.75, 1.15);
+        ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fef9c3'; ctx.beginPath(); ctx.arc(0, 0, r*0.88, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(0, 0, r*0.55, 0, Math.PI*2); ctx.fill();
         ctx.restore();
      }
      else if (type === 'kiwi') {
-        ctx.save(); ctx.scale(0.8, 1);
+        ctx.save(); ctx.scale(0.82, 1);
         ctx.fillStyle = '#78350f'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#84cc16'; ctx.beginPath(); ctx.arc(0, 0, r*0.9, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, 0, r*0.3, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#111';
-        for(let i=0; i<8; i++) {
-           let a = i * Math.PI/4;
+        ctx.restore();
+        ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, 0, r*0.92, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#84cc16'; ctx.beginPath(); ctx.arc(0, 0, r*0.78, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, r*0.35, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#451a03';
+        for(let i=0; i<10; i++) {
+           let a = i * Math.PI/5 + 0.15;
            if ((isRight && Math.cos(a) > 0) || (!isRight && Math.cos(a) < 0)) {
-              ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.4, Math.sin(a)*r*0.4, r*0.04, 0, Math.PI*2); ctx.fill();
+              ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.48, Math.sin(a)*r*0.48, r*0.04, 0, Math.PI*2); ctx.fill();
            }
         }
-        ctx.restore();
      }
      else if (type === 'coconut') {
+        ctx.save(); ctx.scale(0.88, 1);
         ctx.fillStyle = '#451a03'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(0, 0, r*0.9, 0, Math.PI*2); ctx.fill();
-        if (isRight) {
-           ctx.clearRect(r*0.2, -r*0.4, r*0.7, r*0.8);
-        } else {
-           ctx.clearRect(-r*0.9, -r*0.4, r*0.7, r*0.8);
-        }
+        ctx.restore();
+        ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(0, 0, r*0.88, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff';
+        if (isRight) { ctx.fillRect(r*0.15, -r*0.35, r*0.65, r*0.7); }
+        else { ctx.fillRect(-r*0.8, -r*0.35, r*0.65, r*0.7); }
      }
      else if (type === 'apple') {
         drawApple(ctx, r);
-        ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.arc(0, 0, r*0.7, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#451a03';
-        if (isRight) { ctx.beginPath(); ctx.arc(r*0.25, 0, r*0.08, 0, Math.PI*2); ctx.fill(); }
-        else { ctx.beginPath(); ctx.arc(-r*0.25, 0, r*0.08, 0, Math.PI*2); ctx.fill(); }
+        ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.arc(0, 0, r*0.72, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#dc2626';
+        const coreSide = isRight ? 1 : -1;
+        ctx.beginPath(); ctx.ellipse(coreSide*r*0.22, 0, r*0.1, r*0.14, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#78350f';
+        if (isRight) { ctx.beginPath(); ctx.arc(r*0.22, -r*0.06, r*0.05, 0, Math.PI*2); ctx.fill(); }
+        else { ctx.beginPath(); ctx.arc(-r*0.22, -r*0.06, r*0.05, 0, Math.PI*2); ctx.fill(); }
+        if (isRight) { ctx.beginPath(); ctx.arc(r*0.15, r*0.08, r*0.04, 0, Math.PI*2); ctx.fill(); }
+        else { ctx.beginPath(); ctx.arc(-r*0.15, r*0.08, r*0.04, 0, Math.PI*2); ctx.fill(); }
      }
      else if (type === 'freeze') {
         ctx.fillStyle = '#7dd3fc';
         ctx.fillRect(-r, -r, r*2, r*2);
+        ctx.fillStyle = '#e0f2fe';
+        ctx.font = `${r*0.5}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('❄', 0, 0);
      }
      ctx.restore();
   };
@@ -330,8 +384,6 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
     frameCountRef.current++;
 
     renderCommonBackground(ctx, width, height, frameCountRef.current, visualAcuity);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-    ctx.fillRect(0, 0, width, height);
 
     if (freezeFramesRef.current > 0) {
        freezeFramesRef.current--;
@@ -420,12 +472,29 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
          ctx.shadowBlur = 10;
          
          if (item.type === 'bomb') {
-            ctx.beginPath();
-            ctx.arc(0, 0, item.radius, 0, Math.PI * 2);
-            ctx.fillStyle = '#111'; ctx.fill();
-            const sparkOffset = item.radius * 0.8;
-            ctx.fillStyle = frameCountRef.current % 10 < 5 ? '#f97316' : '#fde047';
-            ctx.beginPath(); ctx.arc(sparkOffset, -sparkOffset, item.radius * 0.3, 0, Math.PI*2); ctx.fill();
+            const bombR = item.radius;
+            ctx.fillStyle = '#1f2937';
+            ctx.beginPath(); ctx.arc(0, 0, bombR, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#111827'; ctx.lineWidth = bombR*0.08;
+            ctx.beginPath(); ctx.arc(0, 0, bombR*0.88, 0, Math.PI*2); ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.beginPath(); ctx.arc(-bombR*0.35, -bombR*0.35, bombR*0.3, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = bombR*0.12; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(0, -bombR);
+            ctx.quadraticCurveTo(bombR*0.3, -bombR*1.35, 0, -bombR*1.5);
+            ctx.quadraticCurveTo(-bombR*0.15, -bombR*1.25, -bombR*0.08, -bombR*1.08);
+            ctx.stroke();
+            const flicker = frameCountRef.current % 8 < 4;
+            const sparkColor = flicker ? '#fbbf24' : '#f97316';
+            const sparkSize = bombR * (0.28 + (frameCountRef.current % 6) * 0.04);
+            ctx.fillStyle = sparkColor;
+            ctx.beginPath(); ctx.arc(0, -bombR*1.45, sparkSize, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fef08a';
+            ctx.beginPath(); ctx.arc(0, -bombR*1.45, sparkSize*0.5, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${bombR*0.65}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('💀', 0, bombR*0.05);
          } else if (item.type === 'freeze') {
             ctx.fillStyle = '#7dd3fc';
             ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 15;
