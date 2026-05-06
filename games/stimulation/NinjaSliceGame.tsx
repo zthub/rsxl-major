@@ -23,6 +23,7 @@ interface Item {
   vRot: number;
   sliced: boolean;
   color: string;
+  owner?: 'left' | 'right';
 }
 
 interface Particle {
@@ -44,15 +45,25 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
 
   const [level, setLevel] = useState(1);
   const [gameOverState, setGameOverState] = useState(false);
-  
+  const [isTwoPlayer, setIsTwoPlayer] = useState(() => localStorage.getItem('ninjaSliceTwoPlayer') === 'true');
+  const [leftFailed, setLeftFailed] = useState(false);
+  const [rightFailed, setRightFailed] = useState(false);
+
   const itemsRef = useRef<Item[]>([]);
   const particlesRef = useRef<Particle[]>([]);
-  const trailRef = useRef<Point[]>([]);
+  const leftTrailRef = useRef<Point[]>([]);
+  const rightTrailRef = useRef<Point[]>([]);
   const scoreRef = useRef(0);
+  const leftScoreRef = useRef(0);
+  const rightScoreRef = useRef(0);
   const nextSpawnRef = useRef(0);
-  
-  // Fun Mechanics
+
+  const leftFailedRef = useRef(false);
+  const rightFailedRef = useRef(false);
+
   const comboRef = useRef({ hits: 0, lastHitFrame: 0 });
+  const leftComboRef = useRef({ hits: 0, lastHitFrame: 0 });
+  const rightComboRef = useRef({ hits: 0, lastHitFrame: 0 });
   const freezeFramesRef = useRef(0);
 
   const getGravity = () => {
@@ -62,6 +73,7 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
   };
 
   const createParticles = (x: number, y: number, color: string, amount: number = 15) => {
+    if (particlesRef.current.length > 100) return;
     for(let i = 0; i < amount; i++) {
        particlesRef.current.push({
          x, y,
@@ -78,12 +90,21 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
   const initGame = useCallback(() => {
     itemsRef.current = [];
     particlesRef.current = [];
-    trailRef.current = [];
+    leftTrailRef.current = [];
+    rightTrailRef.current = [];
     scoreRef.current = 0;
+    leftScoreRef.current = 0;
+    rightScoreRef.current = 0;
     nextSpawnRef.current = 0;
     comboRef.current = { hits: 0, lastHitFrame: 0 };
+    leftComboRef.current = { hits: 0, lastHitFrame: 0 };
+    rightComboRef.current = { hits: 0, lastHitFrame: 0 };
     freezeFramesRef.current = 0;
+    leftFailedRef.current = false;
+    rightFailedRef.current = false;
     setGameOverState(false);
+    setLeftFailed(false);
+    setRightFailed(false);
   }, []);
 
   useEffect(() => {
@@ -91,16 +112,52 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
   }, [isPlaying, level, initGame]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (!isPlaying || gameOverState) return;
+    if (!isPlaying) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     canvas.setPointerCapture(e.pointerId);
     const rect = canvas.getBoundingClientRect();
-    trailRef.current = [{
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      age: 0
-    }];
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (gameOverState) {
+      if (isTwoPlayer) {
+        const centerX = width / 2;
+        const panelW = Math.min(200, width * 0.4);
+        const panelH = height * 0.55;
+        const panelY = height * 0.18;
+        const btnW = Math.min(120, width * 0.26);
+        const btnH = 38;
+        const btnY = panelY + panelH + 25;
+        const leftBtnX = centerX - btnW - 10;
+        const rightBtnX = centerX + 10;
+
+        if (y >= btnY && y <= btnY + btnH) {
+          if (x >= leftBtnX && x <= leftBtnX + btnW) {
+            setGameOverState(false);
+            initGame();
+            return;
+          }
+          if (x >= rightBtnX && x <= rightBtnX + btnW) {
+            onGameOver();
+            return;
+          }
+        }
+      } else {
+        const btnW = Math.min(140, width * 0.3);
+        const btnH = 42;
+        const btnY = height / 2 + 40;
+        if (y >= btnY && y <= btnY + btnH && x >= width/2 - btnW/2 && x <= width/2 + btnW/2) {
+          onGameOver();
+          return;
+        }
+      }
+      return;
+    }
+
+    const isLeftSide = !isTwoPlayer || x < width / 2;
+    const trail = isLeftSide ? leftTrailRef.current : rightTrailRef.current;
+    trail.push({ x, y, age: 0 });
   };
 
   const drawFloatingText = (ctx: CanvasRenderingContext2D, text: string, x: number, y: number, color: string, size: number) => {
@@ -115,22 +172,30 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isPlaying || gameOverState || trailRef.current.length === 0) return;
+    if (!isPlaying || gameOverState) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
     const nx = e.clientX - rect.left;
     const ny = e.clientY - rect.top;
-    
-    const last = trailRef.current[trailRef.current.length - 1];
+
+    const isLeftSide = !isTwoPlayer || nx < width / 2;
+    const trail = isLeftSide ? leftTrailRef.current : rightTrailRef.current;
+    const comboRefToUse = isTwoPlayer ? (isLeftSide ? leftComboRef.current : rightComboRef.current) : comboRef.current;
+
+    if (trail.length === 0) return;
+
+    const last = trail[trail.length - 1];
     const p1 = last;
     const p2 = { x: nx, y: ny, age: 0 };
-    trailRef.current.push(p2);
+    trail.push(p2);
 
-    // Collision detection
+    const ctx = canvas.getContext('2d');
+
     itemsRef.current.forEach(item => {
       if (item.sliced) return;
+      if (isTwoPlayer && item.owner && item.owner !== (isLeftSide ? 'left' : 'right')) return;
+
       const l2 = Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
       let t = 0;
       if (l2 !== 0) {
@@ -139,42 +204,79 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
       const projX = p1.x + t * (p2.x - p1.x);
       const projY = p1.y + t * (p2.y - p1.y);
       const dist = Math.hypot(item.x - projX, item.y - projY);
-      
+
       if (dist < item.radius) {
         item.sliced = true;
-        
+
         if (item.type === 'bomb') {
           playSound('wrong');
           createParticles(item.x, item.y, '#ef4444', 30);
-          setGameOverState(true);
-          setTimeout(() => onGameOver(), 2000);
+          if (isTwoPlayer) {
+            if (isLeftSide) {
+              leftFailedRef.current = true;
+              setLeftFailed(true);
+              drawFloatingText(ctx!, '💥 切到炸弹了!', width / 4, height / 2, '#ef4444', Math.max(36, width * 0.05));
+            } else {
+              rightFailedRef.current = true;
+              setRightFailed(true);
+              drawFloatingText(ctx!, '💥 切到炸弹了!', width * 3 / 4, height / 2, '#ef4444', Math.max(36, width * 0.05));
+            }
+            if (leftFailedRef.current && rightFailedRef.current) {
+              setTimeout(() => setGameOverState(true), 1500);
+            }
+          } else {
+            setGameOverState(true);
+            setTimeout(() => onGameOver(), 2000);
+          }
         } else if (item.type === 'freeze') {
            playSound('shoot');
-           freezeFramesRef.current = 300; // 5 seconds of slow mo
+           freezeFramesRef.current = 300;
            createParticles(item.x, item.y, '#38bdf8', 20);
         } else {
           playSound('shoot');
           createParticles(item.x, item.y, item.color);
-          
-          // Combo mechanic
-          if (frameCountRef.current - comboRef.current.lastHitFrame < 45) {
-             comboRef.current.hits++;
+
+          if (frameCountRef.current - comboRefToUse.lastHitFrame < 45) {
+             comboRefToUse.hits++;
           } else {
-             comboRef.current.hits = 1;
+             comboRefToUse.hits = 1;
           }
-          comboRef.current.lastHitFrame = frameCountRef.current;
-          
-          const pts = 10 + (comboRef.current.hits > 1 ? comboRef.current.hits * 5 : 0);
-          scoreRef.current += pts;
-          onScore(pts);
-          
-          if (ctx && comboRef.current.hits > 1) {
-             drawFloatingText(ctx, `${comboRef.current.hits} COMBO!`, item.x, item.y - 40, '#facc15', 30);
-          }
-          
-          if (scoreRef.current >= level * 150) { 
-             playSound('correct');
-             setTimeout(() => setLevel(l => l + 1), 1000);
+          comboRefToUse.lastHitFrame = frameCountRef.current;
+
+          const pts = 10 + (comboRefToUse.hits > 1 ? comboRefToUse.hits * 5 : 0);
+
+          if (isTwoPlayer) {
+            if (isLeftSide) {
+              leftScoreRef.current += pts;
+              onScore(pts);
+              if (ctx && comboRefToUse.hits > 1) {
+                drawFloatingText(ctx, `${comboRefToUse.hits} COMBO!`, item.x, item.y - 40, '#facc15', 30);
+              }
+              if (leftScoreRef.current >= level * 150) {
+                playSound('correct');
+                setTimeout(() => setLevel(l => l + 1), 1000);
+              }
+            } else {
+              rightScoreRef.current += pts;
+              onScore(pts);
+              if (ctx && comboRefToUse.hits > 1) {
+                drawFloatingText(ctx, `${comboRefToUse.hits} COMBO!`, item.x, item.y - 40, '#facc15', 30);
+              }
+              if (rightScoreRef.current >= level * 150) {
+                playSound('correct');
+                setTimeout(() => setLevel(l => l + 1), 1000);
+              }
+            }
+          } else {
+            scoreRef.current += pts;
+            onScore(pts);
+            if (ctx && comboRefToUse.hits > 1) {
+              drawFloatingText(ctx, `${comboRefToUse.hits} COMBO!`, item.x, item.y - 40, '#facc15', 30);
+            }
+            if (scoreRef.current >= level * 150) {
+              playSound('correct');
+              setTimeout(() => setLevel(l => l + 1), 1000);
+            }
           }
         }
       }
@@ -182,7 +284,8 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
   };
 
   const handlePointerUp = () => {
-    trailRef.current = [];
+    leftTrailRef.current = [];
+    rightTrailRef.current = [];
   };
 
   // Fruit Drawing Helpers - Redesigned for high recognition
@@ -392,13 +495,116 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
        ctx.fillRect(0, 0, width, height);
     }
 
+    if (isTwoPlayer && (leftFailedRef.current || rightFailedRef.current) && !gameOverState) {
+      const pulse = Math.abs(Math.sin(frameCountRef.current * 0.08));
+      if (leftFailedRef.current && !rightFailedRef.current) {
+        ctx.fillStyle = `rgba(239, 68, 68, ${0.3 + pulse * 0.2})`;
+        ctx.fillRect(0, 0, width / 2, height);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = `bold ${Math.min(28, width * 0.04)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ef4444';
+        ctx.fillText('💥 切到炸弹了!', width / 4, height / 2);
+        ctx.shadowBlur = 0;
+      }
+      if (rightFailedRef.current && !leftFailedRef.current) {
+        ctx.fillStyle = `rgba(239, 68, 68, ${0.3 + pulse * 0.2})`;
+        ctx.fillRect(width / 2, 0, width / 2, height);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = `bold ${Math.min(28, width * 0.04)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ef4444';
+        ctx.fillText('💥 切到炸弹了!', width * 3 / 4, height / 2);
+        ctx.shadowBlur = 0;
+      }
+    }
+
     if (gameOverState) {
-       ctx.fillStyle = 'rgba(0,0,0,0.5)';
+       ctx.fillStyle = 'rgba(0,0,0,0.8)';
        ctx.fillRect(0, 0, width, height);
-       ctx.fillStyle = '#ef4444';
-       ctx.font = `bold ${Math.min(50, width * 0.05)}px sans-serif`;
-       ctx.textAlign = 'center';
-       ctx.fillText('💥 切到炸弹了！', width/2, height/2);
+
+       if (isTwoPlayer) {
+         const centerX = width / 2;
+         const panelW = Math.min(200, width * 0.4);
+         const panelH = height * 0.55;
+         const panelY = height * 0.18;
+         const leftPanelX = centerX - panelW - 20;
+         const rightPanelX = centerX + 20;
+         const radius = 16;
+
+         [leftPanelX, rightPanelX].forEach((px, idx) => {
+           const failed = idx === 0 ? leftFailedRef.current : rightFailedRef.current;
+           const score = idx === 0 ? leftScoreRef.current : rightScoreRef.current;
+           const label = idx === 0 ? '左边' : '右边';
+
+           ctx.fillStyle = failed ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)';
+           ctx.beginPath();
+           ctx.roundRect(px, panelY, panelW, panelH, radius);
+           ctx.fill();
+
+           ctx.strokeStyle = failed ? '#ef4444' : '#22c55e';
+           ctx.lineWidth = 2;
+           ctx.stroke();
+
+           ctx.fillStyle = '#fff';
+           ctx.font = `bold ${Math.min(22, width * 0.03)}px sans-serif`;
+           ctx.textAlign = 'center';
+           ctx.fillText(label, px + panelW / 2, panelY + 35);
+
+           if (failed) {
+             ctx.font = `${Math.min(70, width * 0.1)}px sans-serif`;
+             ctx.fillText('💥', px + panelW / 2, panelY + panelH * 0.42);
+           }
+
+           ctx.fillStyle = failed ? '#ef4444' : '#22c55e';
+           ctx.font = `bold ${Math.min(32, width * 0.045)}px sans-serif`;
+           ctx.fillText(`${score}`, px + panelW / 2, panelY + panelH * 0.7);
+
+           ctx.fillStyle = 'rgba(255,255,255,0.5)';
+           ctx.font = `${Math.min(14, width * 0.02)}px sans-serif`;
+           ctx.fillText('分', px + panelW / 2, panelY + panelH * 0.82);
+         });
+
+         ctx.fillStyle = '#fff';
+         ctx.font = `bold ${Math.min(28, width * 0.04)}px sans-serif`;
+         ctx.textAlign = 'center';
+         ctx.fillText('🏆 游戏结束 🏆', centerX, panelY - 25);
+
+         const btnW = Math.min(120, width * 0.26);
+         const btnH = 38;
+         const btnY = panelY + panelH + 25;
+         const leftBtnX = centerX - btnW - 10;
+         const rightBtnX = centerX + 10;
+
+         [{ x: leftBtnX, color: '#22c55e', text: '继续游戏' }, { x: rightBtnX, color: '#ef4444', text: '返回列表' }].forEach(btn => {
+           ctx.fillStyle = btn.color;
+           ctx.beginPath();
+           ctx.roundRect(btn.x, btnY, btnW, btnH, 10);
+           ctx.fill();
+           ctx.fillStyle = '#fff';
+           ctx.font = `bold ${Math.min(15, width * 0.02)}px sans-serif`;
+           ctx.textAlign = 'center';
+           ctx.fillText(btn.text, btn.x + btnW / 2, btnY + btnH / 2 + 5);
+         });
+       } else {
+         ctx.fillStyle = '#ef4444';
+         ctx.font = `bold ${Math.min(50, width * 0.05)}px sans-serif`;
+         ctx.textAlign = 'center';
+         ctx.fillText('💥 切到炸弹了！', width/2, height/2);
+
+         const btnW = Math.min(140, width * 0.3);
+         const btnH = 42;
+         ctx.fillStyle = '#ef4444';
+         ctx.beginPath();
+         ctx.roundRect(width/2 - btnW/2, height/2 + 40, btnW, btnH, 10);
+         ctx.fill();
+         ctx.fillStyle = '#fff';
+         ctx.font = `bold ${Math.min(16, width * 0.022)}px sans-serif`;
+         ctx.textAlign = 'center';
+         ctx.fillText('返回列表', width/2, height/2 + 40 + btnH/2 + 6);
+       }
        requestRef.current = requestAnimationFrame(animate);
        return;
     }
@@ -411,7 +617,7 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
           const rand = Math.random();
           let t: ItemType = 'apple';
           let c = '#ef4444';
-          
+
           if (rand < 0.15 + Math.min(level*0.02, 0.1)) { t = 'bomb'; c = '#111'; }
           else if (rand < 0.25 && freezeFramesRef.current === 0) { t = 'freeze'; c = '#bae6fd'; }
           else if (rand < 0.40) { t = 'watermelon'; c = '#22c55e'; }
@@ -421,23 +627,67 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
           else { t = 'coconut'; c = '#f8fafc'; }
 
           let r = Math.max(30, width * 0.04);
-          if (t === 'watermelon') r *= 1.3; // larger watermelon
-          
+          if (t === 'watermelon') r *= 1.3;
+
           const isSlowMoOut = freezeFramesRef.current > 0;
 
-          itemsRef.current.push({
-            id: Math.random(),
-            x: width * 0.2 + Math.random() * width * 0.6,
-            y: height + r,
-            vx: (Math.random() - 0.5) * width * 0.008 * (isSlowMoOut ? 0.3 : 1),
-            vy: -height * (0.018 + Math.random() * 0.006) * (isSlowMoOut ? 0.6 : 1),
-            radius: r,
-            type: t,
-            rotation: Math.random() * Math.PI * 2,
-            vRot: (Math.random() - 0.5) * 0.2 * (isSlowMoOut ? 0.3 : 1),
-            sliced: false,
-            color: c
-          });
+          if (isTwoPlayer) {
+             const shouldSpawnLeft = !leftFailedRef.current;
+             const shouldSpawnRight = !rightFailedRef.current;
+
+             if (shouldSpawnLeft) {
+               const leftX = width * 0.1 + Math.random() * width * 0.3;
+               const vxBase = (Math.random() - 0.5) * width * 0.006 * (isSlowMoOut ? 0.3 : 1);
+
+               itemsRef.current.push({
+                 id: Math.random(),
+                 x: leftX,
+                 y: height + r,
+                 vx: Math.abs(vxBase),
+                 vy: -height * (0.018 + Math.random() * 0.006) * (isSlowMoOut ? 0.6 : 1),
+                 radius: r,
+                 type: t,
+                 rotation: Math.random() * Math.PI * 2,
+                 vRot: (Math.random() - 0.5) * 0.2 * (isSlowMoOut ? 0.3 : 1),
+                 sliced: false,
+                 color: c,
+                 owner: 'left'
+               });
+             }
+             if (shouldSpawnRight) {
+               const rightX = width * 0.6 + Math.random() * width * 0.3;
+               const vxBase = (Math.random() - 0.5) * width * 0.006 * (isSlowMoOut ? 0.3 : 1);
+
+               itemsRef.current.push({
+                 id: Math.random(),
+                 x: rightX,
+                 y: height + r,
+                 vx: -Math.abs(vxBase),
+                 vy: -height * (0.018 + Math.random() * 0.006) * (isSlowMoOut ? 0.6 : 1),
+                 radius: r,
+                 type: t,
+                 rotation: Math.random() * Math.PI * 2,
+                 vRot: (Math.random() - 0.5) * 0.2 * (isSlowMoOut ? 0.3 : 1),
+                 sliced: false,
+                 color: c,
+                 owner: 'right'
+               });
+             }
+          } else {
+             itemsRef.current.push({
+               id: Math.random(),
+               x: width * 0.2 + Math.random() * width * 0.6,
+               y: height + r,
+               vx: (Math.random() - 0.5) * width * 0.008 * (isSlowMoOut ? 0.3 : 1),
+               vy: -height * (0.018 + Math.random() * 0.006) * (isSlowMoOut ? 0.6 : 1),
+               radius: r,
+               type: t,
+               rotation: Math.random() * Math.PI * 2,
+               vRot: (Math.random() - 0.5) * 0.2 * (isSlowMoOut ? 0.3 : 1),
+               sliced: false,
+               color: c
+             });
+          }
        }
        const spawnRate = (freezeFramesRef.current > 0) ? 120 : (60 + Math.random() * (90 - level * 5));
        nextSpawnRef.current = frameCountRef.current + Math.max(20, spawnRate);
@@ -450,10 +700,24 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
       item.vy += gravity;
       item.rotation += item.vRot;
 
+      if (isTwoPlayer && item.owner === 'left') {
+        const maxX = width / 2 - item.radius - 5;
+        if (item.x > maxX) {
+          item.x = maxX;
+          item.vx = -Math.abs(item.vx) * 0.5;
+        }
+      }
+      if (isTwoPlayer && item.owner === 'right') {
+        const minX = width / 2 + item.radius + 5;
+        if (item.x < minX) {
+          item.x = minX;
+          item.vx = Math.abs(item.vx) * 0.5;
+        }
+      }
+
       if (item.y > height + item.radius + 100) {
          itemsRef.current.splice(i, 1);
          if (!item.sliced && item.type !== 'bomb' && item.type !== 'freeze') {
-            // Miss mechanic? Optional.
          }
          continue;
       }
@@ -468,8 +732,13 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
          ctx.save(); ctx.translate(-drift, 0); drawHalf(ctx, item.type, item.radius, false); ctx.restore();
          ctx.save(); ctx.translate(drift, 0); drawHalf(ctx, item.type, item.radius, true); ctx.restore();
       } else {
-         ctx.shadowColor = 'rgba(0,0,0,0.5)';
-         ctx.shadowBlur = 10;
+         if (item.type === 'bomb') {
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 8;
+         } else if (item.type === 'freeze') {
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 10;
+         }
          
          if (item.type === 'bomb') {
             const bombR = item.radius;
@@ -529,40 +798,62 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
        ctx.globalAlpha = 1.0;
     }
 
-    if (trailRef.current.length > 0) {
-      for(let i=0; i<trailRef.current.length; i++) trailRef.current[i].age++;
-      trailRef.current = trailRef.current.filter(p => p.age < 15);
-      
-      if (trailRef.current.length > 1) {
-         ctx.beginPath();
-         ctx.moveTo(trailRef.current[0].x, trailRef.current[0].y);
-         for(let i=1; i<trailRef.current.length; i++) {
-            ctx.lineTo(trailRef.current[i].x, trailRef.current[i].y);
-         }
-         ctx.lineCap = 'round';
-         ctx.lineJoin = 'round';
-         ctx.lineWidth = Math.max(5, width * 0.008);
-         ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-         ctx.shadowColor = freezeFramesRef.current > 0 ? '#38bdf8' : '#60a5fa'; // Blue sword during freeze
-         ctx.shadowBlur = 15;
-         ctx.stroke();
-         ctx.shadowBlur = 0;
+    for (let t = 0; t < 2; t++) {
+      const trail = t === 0 ? leftTrailRef.current : rightTrailRef.current;
+      if (trail.length > 0) {
+        for(let i=0; i<trail.length; i++) trail[i].age++;
+        const filtered = trail.filter(p => p.age < 15);
+        if (t === 0) leftTrailRef.current = filtered; else rightTrailRef.current = filtered;
+
+        if (filtered.length > 1) {
+           ctx.beginPath();
+           ctx.moveTo(filtered[0].x, filtered[0].y);
+           for(let i=1; i<filtered.length; i++) {
+              ctx.lineTo(filtered[i].x, filtered[i].y);
+           }
+           ctx.lineCap = 'round';
+           ctx.lineJoin = 'round';
+           ctx.lineWidth = Math.max(5, width * 0.008);
+           ctx.strokeStyle = t === 0 ? 'rgba(255,255,255,0.8)' : 'rgba(255,200,100,0.8)';
+           if (freezeFramesRef.current > 0) {
+             ctx.shadowColor = '#38bdf8';
+             ctx.shadowBlur = 10;
+           }
+           ctx.stroke();
+           ctx.shadowBlur = 0;
+        }
       }
+    }
+
+    if (isTwoPlayer) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 10]);
+      ctx.beginPath();
+      ctx.moveTo(width / 2, 0);
+      ctx.lineTo(width / 2, height);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     ctx.fillStyle = '#fff';
     ctx.font = `bold ${Math.min(22, width * 0.025)}px sans-serif`;
     ctx.textAlign = 'left';
-    ctx.shadowColor = 'black'; ctx.shadowBlur = 6;
-    ctx.fillText(`关卡: ${level}  得分: ${scoreRef.current}`, Math.max(20, width * 0.02), Math.max(70, height * 0.1));
-    ctx.shadowBlur = 0;
+    if (isTwoPlayer) {
+      const scoreY = Math.max(100, height * 0.15);
+      ctx.fillText(`左边: ${leftScoreRef.current}`, Math.max(20, width * 0.02), scoreY);
+      ctx.fillText(`右边: ${rightScoreRef.current}`, width * 0.52, scoreY);
+      ctx.fillText(`关卡: ${level}`, width * 0.02, Math.max(70, height * 0.11));
+    } else {
+      ctx.fillText(`关卡: ${level}  得分: ${scoreRef.current}`, Math.max(20, width * 0.02), Math.max(70, height * 0.1));
+    }
 
     if (freezeFramesRef.current > 0 && freezeFramesRef.current < 60 && frameCountRef.current % 10 < 5) {
        drawFloatingText(ctx, "冻结即将结束...", width/2, height*0.1, '#38bdf8', Math.max(20, width*0.03));
     }
 
     requestRef.current = requestAnimationFrame(animate);
-  }, [width, height, visualAcuity, level, gameOverState]);
+  }, [width, height, visualAcuity, level, gameOverState, isTwoPlayer]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -582,13 +873,38 @@ export const NinjaSliceGame: React.FC<GameComponentProps> = ({ width, height, is
   }, [isPlaying, animate]);
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      className="block touch-none cursor-crosshair" 
-    />
+    <div className="relative w-full h-full">
+      <canvas
+        ref={canvasRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        className="block touch-none cursor-crosshair"
+      />
+      <button
+        onClick={() => { const next = !isTwoPlayer; setIsTwoPlayer(next); localStorage.setItem('ninjaSliceTwoPlayer', String(next)); }}
+        title={isTwoPlayer ? '双人模式 - 点击切换为单人模式' : '单人模式 - 点击切换为双人模式'}
+        className={`absolute top-20 right-20 w-12 h-12 rounded-full shadow-lg z-10 flex items-center justify-center transition-all active:scale-95 ${
+          isTwoPlayer
+            ? 'bg-brand-orange hover:bg-brand-orange/90'
+            : 'bg-slate-700 hover:bg-slate-600'
+        }`}
+      >
+        {isTwoPlayer ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        )}
+      </button>
+    </div>
   );
 };
