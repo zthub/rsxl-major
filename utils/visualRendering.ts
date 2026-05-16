@@ -39,36 +39,107 @@ export const renderCommonBackground = (
   const manualMode = parseInt(savedMode);
 
   // Color Scheme: 0=Black/White, 1=Red/Green, 2=Yellow/Blue (Default: 0)
+  // User can manually select a color, which resets the color timer to start from that color
   const savedColor = localStorage.getItem('bg_color_scheme') || '0';
-  const colorIndex = parseInt(savedColor);
+  const manualColorIndex = parseInt(savedColor);
 
-  // --- Determine Colors ---
-  let c1 = '#000000';
-  let c2 = '#FFFFFF';
-  if (colorIndex === 1) { // Red/Green
-    c1 = '#FF0000';
-    c2 = '#00FF00';
-  } else if (colorIndex === 2) { // Yellow/Blue
-    c1 = '#FFFF00';
-    c2 = '#0000FF';
-  }
-
-  // --- Determine Loop Mode (Based on persistent cumulative seconds) ---
-  const CYCLE_PERIOD = 180; // 3 minutes = 180 seconds
-  const cycle = [3, 1, 2];
+  // --- Independent Mode & Color Timers ---
+  const CYCLE_PERIOD = 90; // Mode switches every 90 seconds
+  const COLOR_PERIOD = 30; // Color switches every 30 seconds
+  const cycle = [3, 1, 2]; // Circle → Grating → Rotating Grating
   
   const totalSeconds = parseInt(localStorage.getItem('bg_total_play_seconds') || '0');
-  const resetSeconds = parseInt(localStorage.getItem('bg_manual_reset_seconds') || '0');
   
-  // Calculate effective training time since manual selection
-  // Use Math.max(0) to prevent negative results due to storage race/clearing
-  const activeSeconds = Math.max(0, totalSeconds - resetSeconds);
+  // Mode timer: reset when user manually selects a mode (bg_manual_reset_seconds)
+  const modeResetSeconds = parseInt(localStorage.getItem('bg_manual_reset_seconds') || '0');
+  const activeModeSeconds = Math.max(0, totalSeconds - modeResetSeconds);
   
-  const manualIndex = cycle.indexOf(manualMode) === -1 ? 0 : cycle.indexOf(manualMode);
+  // Color timer: reset when user manually selects a color (bg_color_reset_seconds)
+  const colorResetSeconds = parseInt(localStorage.getItem('bg_color_reset_seconds') || '0');
+  const activeColorSeconds = Math.max(0, totalSeconds - colorResetSeconds);
   
-  // Choose mode based on how many 3-minute periods have passed
-  const periodsPassed = Math.floor(activeSeconds / CYCLE_PERIOD);
-  const activeMode = cycle[(manualIndex + periodsPassed) % 3];
+  // --- Determine Active Mode ---
+  const manualModeIndex = cycle.indexOf(manualMode) === -1 ? 0 : cycle.indexOf(manualMode);
+  const modePeriodsPassed = Math.floor(activeModeSeconds / CYCLE_PERIOD);
+  const activeMode = cycle[(manualModeIndex + modePeriodsPassed) % 3];
+
+  // --- Determine Active Color ---
+  // User selected a color → start from that color, then auto-cycle every 30s
+  const colorOffset = Math.floor(activeColorSeconds / COLOR_PERIOD);
+  const currentColorIndex = (manualColorIndex + colorOffset) % 3;
+  
+  // 3 color schemes available (base colors in HSL for easier manipulation)
+  const colorSchemes = [
+    { h1: 0, s1: 0, l1: 0, h2: 0, s2: 0, l2: 100 },      // Black/White (grayscale)
+    { h1: 0, s1: 100, l1: 50, h2: 120, s2: 100, l2: 50 }, // Red/Green
+    { h1: 60, s1: 100, l1: 50, h2: 240, s2: 100, l2: 50 } // Yellow/Blue
+  ];
+  
+  // --- Color Intensity Variation (Every 5 seconds within 30s color cycle) ---
+  const INTENSITY_PERIOD = 5; // Change intensity every 5 seconds
+  
+  // Deterministic pseudo-random based on time period (ensures consistency during same 5s window)
+  const seededRandom = (seed: number) => {
+    const x = Math.sin(seed * 9301 + 49297) * 233280;
+    return x - Math.floor(x);
+  };
+  
+  // Calculate which 5-second interval we're in (0-5 for each 30s color cycle)
+  const secondsInColorCycle = activeColorSeconds % COLOR_PERIOD;
+  const currentIntensityPeriod = Math.floor(secondsInColorCycle / INTENSITY_PERIOD);
+  
+  // Alternating pattern: Odd periods (0,2,4) = Pure colors, Even periods (1,3,5) = Desaturated
+  const isPureColor = currentIntensityPeriod % 2 === 0; // Periods 0,2,4 → pure; 1,3,5 → desaturated
+  
+  // Apply variations to get final colors
+  const scheme = colorSchemes[currentColorIndex];
+  
+  let finalH1: number, finalS1: number, finalL1: number;
+  let finalH2: number, finalS2: number, finalL2: number;
+  
+  if (isPureColor) {
+    // Pure color: use original HSL values without modification
+    finalH1 = scheme.h1;
+    finalS1 = scheme.s1;
+    finalL1 = scheme.l1;
+    
+    finalH2 = scheme.h2;
+    finalS2 = scheme.s2;
+    finalL2 = scheme.l2;
+  } else {
+    // Desaturated: apply random intensity reduction
+    const randomSeed1 = currentIntensityPeriod * 7 + currentColorIndex * 13;
+    const randomSeed2 = currentIntensityPeriod * 11 + currentColorIndex * 17;
+    
+    const saturationReduction1 = 20 + seededRandom(randomSeed1) * 25; // 20-45% less saturated
+    const saturationReduction2 = 20 + seededRandom(randomSeed2) * 25;
+    const lightnessOffset1 = (seededRandom(randomSeed1 + 100) - 0.5) * 20; // ±10% lightness shift
+    const lightnessOffset2 = (seededRandom(randomSeed2 + 100) - 0.5) * 20;
+    
+    finalH1 = scheme.h1;
+    finalS1 = Math.max(0, scheme.s1 - saturationReduction1);
+    finalL1 = Math.max(5, Math.min(95, scheme.l1 + lightnessOffset1));
+    
+    finalH2 = scheme.h2;
+    finalS2 = Math.max(0, scheme.s2 - saturationReduction2);
+    finalL2 = Math.max(5, Math.min(95, scheme.l2 + lightnessOffset2));
+  }
+  
+  // Convert HSL to Hex
+  const hslToHex = (h: number, s: number, l: number): string => {
+    s /= 100;
+    l /= 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  };
+  
+  const c1 = hslToHex(finalH1, finalS1, finalL1);
+  const c2 = hslToHex(finalH2, finalS2, finalL2);
 
   // --- Drawing Helpers ---
   const drawFlippingGratings = (color1: string, color2: string) => {

@@ -15,7 +15,7 @@ export const BackgroundSettingsOverlay: React.FC<BackgroundSettingsOverlayProps>
 
     const handleModeSelect = (id: string) => {
         localStorage.setItem('bg_stimulation_mode', id);
-        // Reset the 3-minute cycle by saving current total time as the new baseline
+        // Reset the mode timer (90-second cycle) by saving current total time as the new baseline
         const currentTotal = localStorage.getItem('bg_total_play_seconds') || '0';
         localStorage.setItem('bg_manual_reset_seconds', currentTotal);
         
@@ -24,6 +24,10 @@ export const BackgroundSettingsOverlay: React.FC<BackgroundSettingsOverlayProps>
 
     const handleColorSelect = (id: string) => {
         localStorage.setItem('bg_color_scheme', id);
+        // Reset the color timer (30-second cycle) by saving current total time as the new baseline
+        const currentTotal = localStorage.getItem('bg_total_play_seconds') || '0';
+        localStorage.setItem('bg_color_reset_seconds', currentTotal);
+        
         setIsChoosingBackground(false);
     };
 
@@ -103,6 +107,7 @@ export const BackgroundSettingsOverlay: React.FC<BackgroundSettingsOverlayProps>
                                         </button>
                                     ))}
                                 </div>
+                                <p className="text-[9px] text-slate-500 mt-2 text-center">选择后从该颜色开始，每30秒自动切换</p>
                             </div>
                         </div>
 

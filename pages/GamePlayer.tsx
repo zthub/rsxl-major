@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { TRAINING_MODULES } from '../constants';
-import { ArrowLeft, RefreshCw, Play, Pause, Target as TargetIcon, Home } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Play, Pause, Target as TargetIcon, Home, Maximize } from 'lucide-react';
 import { GameRegistry } from '../games/registry';
 import { BackgroundSettingsOverlay } from '../components/BackgroundSettingsOverlay';
 
@@ -304,6 +304,20 @@ export const GamePlayer: React.FC = () => {
           {!showStartModal && !gameOver && (
             <button onClick={resetGame} className="p-2 bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 transition-colors" title="重新开始">
               <RefreshCw className="w-4 h-4" />
+            </button>
+          )}
+          {/* 全屏按钮 */}
+          {!showStartModal && !gameOver && (
+            <button 
+              onClick={() => {
+                if (!document.fullscreenElement) {
+                  document.documentElement.requestFullscreen();
+                }
+              }} 
+              className="p-2 bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 transition-colors" 
+              title="全屏模式"
+            >
+              <Maximize className="w-4 h-4" />
             </button>
           )}
         </div>

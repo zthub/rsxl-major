@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { GameComponentProps } from '../../types';
 import { renderCommonBackground } from '../../utils/visualRendering';
-import { Upload, Video as VideoIcon, Trash2, Maximize2, Eye, EyeOff } from 'lucide-react';
+import { Upload, Video as VideoIcon, Trash2, Maximize2, Eye, EyeOff, FolderOpen } from 'lucide-react';
 
 export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, isPlaying }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -10,8 +10,12 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
     const frameCountRef = useRef(0);
     const visualAcuity = localStorage.getItem('visualAcuity') || '0.2-0.4';
 
-    const [videoSrc, setVideoSrc] = useState<string | null>(null);
-    const [fileName, setFileName] = useState<string>('');
+    const [videoSrc, setVideoSrc] = useState<string | null>(() => {
+        return localStorage.getItem('lastVideoSrc') || null;
+    });
+    const [fileName, setFileName] = useState<string>(() => {
+        return localStorage.getItem('lastVideoFileName') || '';
+    });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // 视力类型：视觉刺激 / 立体视，从本地存储读取上次保存的值
@@ -101,6 +105,37 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
             const url = URL.createObjectURL(file);
             setVideoSrc(url);
             setFileName(file.name);
+            // 保存到本地存储
+            localStorage.setItem('lastVideoSrc', url);
+            localStorage.setItem('lastVideoFileName', file.name);
+        }
+    };
+
+    // 使用 File System Access API 打开文件（可记住上次目录）
+    const handleOpenFileWithPicker = async () => {
+        if ('showOpenFilePicker' in window) {
+            try {
+                const [fileHandle] = await (window as any).showOpenFilePicker({
+                    types: [{
+                        description: '视频文件',
+                        accept: { 'video/*': ['.mp4', '.webm', '.ogg', '.mov', '.avi'] }
+                    }],
+                    multiple: false
+                });
+                const file = await fileHandle.getFile();
+                const url = URL.createObjectURL(file);
+                setVideoSrc(url);
+                setFileName(file.name);
+                localStorage.setItem('lastVideoSrc', url);
+                localStorage.setItem('lastVideoFileName', file.name);
+            } catch (err) {
+                // 用户取消选择或API不支持，回退到传统方式
+                console.log('File System Access API cancelled or failed, fallback to input');
+                fileInputRef.current?.click();
+            }
+        } else {
+            // 不支持 API，使用传统 input
+            fileInputRef.current?.click();
         }
     };
 
@@ -111,6 +146,8 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
         }
         setVideoSrc(null);
         setFileName('');
+        localStorage.removeItem('lastVideoSrc');
+        localStorage.removeItem('lastVideoFileName');
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -186,7 +223,7 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
             <canvas ref={canvasRef} className="absolute inset-0 block" />
 
             {/* 2. 顶部控制栏：视力类型选择 */}
-            <div className="absolute top-4 right-4 z-20 pointer-events-none">
+            <div className="absolute top-4 left-4 z-20 pointer-events-none">
                 <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-white/90 rounded-lg shadow border border-slate-200 text-xs text-slate-700">
                     <span className="font-semibold whitespace-nowrap">视力类型</span>
                     <select
@@ -236,6 +273,14 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
                                 title="移除视频"
                             >
                                 <Trash2 className="w-4 h-4" />
+                            </button>
+                            {/* 更换视频按钮 */}
+                            <button
+                                onClick={handleOpenFileWithPicker}
+                                className="absolute top-2 right-14 p-2 bg-green-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-green-600 shadow-lg z-20"
+                                title="更换视频"
+                            >
+                                <FolderOpen className="w-4 h-4" />
                             </button>
                             {/* 重置大小按钮 */}
                             <div className="absolute top-2 left-2 flex gap-2 z-20">
@@ -327,8 +372,13 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
                                 <h3 className="text-white font-bold text-lg mb-1">选择本地视频</h3>
                                 <p className="text-white/50 text-xs">支持 MP4, WebM 等常见格式</p>
                             </div>
+                            {fileName && (
+                                <p className="text-xs text-yellow-300 bg-black/40 px-3 py-1 rounded-full">
+                                    上次打开: {fileName}
+                                </p>
+                            )}
                             <button
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={handleOpenFileWithPicker}
                                 className="px-6 py-2 bg-brand-blue hover:bg-blue-500 text-white rounded-full font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2 mx-auto"
                             >
                                 <Upload className="w-4 h-4" />
