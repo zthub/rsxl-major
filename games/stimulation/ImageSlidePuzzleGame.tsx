@@ -1115,6 +1115,9 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
     // Full image preview (place just left of the board on mobile/compact)
     const img = imgCacheRef.current.get(levelId);
     const ready = img && img.complete && img.naturalWidth > 0;
+    const srcCell = Math.floor(Math.min(img?.naturalWidth || 300, img?.naturalHeight || 300) / GRID_SIZE);
+    const srcX0 = Math.floor(((img?.naturalWidth || 300) - srcCell * GRID_SIZE) / 2);
+    const srcY0 = Math.floor(((img?.naturalHeight || 300) - srcCell * GRID_SIZE) / 2);
     const idealPreviewX = gridX - previewSize - 10;
     const previewX = idealPreviewX >= padding ? idealPreviewX : padding;
     const previewY = idealPreviewX >= padding ? gridY : padding;

@@ -959,7 +959,7 @@ export const OnlineVideoPlayer: React.FC<GameComponentProps> = ({ width, height,
             {/* 页面右上角固定编辑按钮 - 避开 GamePlayer 的暂停和刷新按钮 */}
             <button
                 onClick={() => setIsPlaylistEditing(!isPlaylistEditing)}
-                className={`fixed top-4 right-32 z-[101] flex items-center justify-center w-9 h-9 rounded-full shadow-xl transition-all ${isPlaylistEditing ? 'bg-blue-600 text-white ring-4 ring-blue-200' : 'bg-white/90 text-slate-600 hover:bg-white border border-slate-200'
+                className={`fixed top-20 right-32 z-[101] flex items-center justify-center w-9 h-9 rounded-full shadow-xl transition-all ${isPlaylistEditing ? 'bg-blue-600 text-white ring-4 ring-blue-200' : 'bg-white/90 text-slate-600 hover:bg-white border border-slate-200'
                     }`}
                 title={isPlaylistEditing ? "退出编辑" : "进入编辑"}
             >
