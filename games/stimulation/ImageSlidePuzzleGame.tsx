@@ -764,8 +764,694 @@ function makeCuteBoatSvg(seed: number) {
   return encodeSvgDataUri(svg);
 }
 
+// 新增主题1: 可爱熊猫
+function makeCutePandaSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 56789 + n * 123) * 10000;
+    return x - Math.floor(x);
+  };
+  const bg = ['#dcfce7', '#fef9c3', '#e0e7ff'][Math.floor(rand(1) * 3)];
+  const bamboo = ['#22c55e', '#16a34a', '#15803d'][Math.floor(rand(2) * 3)];
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${bg[0]}"/>
+        <stop offset="100%" stop-color="${bg[2]}"/>
+      </linearGradient>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.18"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="url(#bg)"/>
+    <g filter="url(#shadow)">
+      <!-- Ears -->
+      <circle cx="200" cy="200" r="50" fill="#1f2937"/>
+      <circle cx="400" cy="200" r="50" fill="#1f2937"/>
+      <!-- Face -->
+      <ellipse cx="300" cy="330" rx="140" ry="120" fill="#ffffff"/>
+      <!-- Eye patches -->
+      <ellipse cx="240" cy="290" rx="40" ry="45" fill="#1f2937" transform="rotate(-15 240 290)"/>
+      <ellipse cx="360" cy="290" rx="40" ry="45" fill="#1f2937" transform="rotate(15 360 290)"/>
+      <!-- Eyes -->
+      <circle cx="245" cy="285" r="16" fill="#ffffff"/>
+      <circle cx="355" cy="285" r="16" fill="#ffffff"/>
+      <circle cx="248" cy="282" r="8" fill="#1f2937"/>
+      <circle cx="358" cy="282" r="8" fill="#1f2937"/>
+      <!-- Nose -->
+      <ellipse cx="300" cy="340" rx="20" ry="14" fill="#1f2937"/>
+      <!-- Mouth -->
+      <path d="M280 365 Q300 385 320 365" stroke="#1f2937" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <!-- Bamboo -->
+      <rect x="420" y="380" width="18" height="140" rx="9" fill="${bamboo[0]}"/>
+      <rect x="445" y="350" width="18" height="170" rx="9" fill="${bamboo[1]}"/>
+      <ellipse cx="429" cy="375" rx="12" ry="8" fill="${bamboo[2]}" transform="rotate(-20 429 375)"/>
+      <ellipse cx="454" cy="345" rx="12" ry="8" fill="${bamboo[2]}" transform="rotate(15 454 345)"/>
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#0f172a" opacity="0.65">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题2: 可爱企鹅
+function makeCutePenguinSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 98765 + n * 456) * 10000;
+    return x - Math.floor(x);
+  };
+  const bg = ['#e0f2fe', '#bae6fd', '#cffafe'][Math.floor(rand(1) * 3)];
+  const belly = ['#fef3c7', '#fffbeb', '#fde68a'][Math.floor(rand(2) * 3)];
+  const scarf = ['#fb7185', '#f97316', '#f59e0b'][Math.floor(rand(3) * 3)];
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <linearGradient id="ice" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${bg[0]}"/>
+        <stop offset="100%" stop-color="${bg[2]}"/>
+      </linearGradient>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.18"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="url(#ice)"/>
+    <!-- Snow ground -->
+    <ellipse cx="300" cy="520" rx="250" ry="60" fill="rgba(255,255,255,0.6)"/>
+    <g filter="url(#shadow)">
+      <!-- Body -->
+      <ellipse cx="300" cy="340" rx="110" ry="150" fill="#1e293b"/>
+      <!-- Belly -->
+      <ellipse cx="300" cy="360" rx="75" ry="115" fill="${belly[0]}"/>
+      <!-- Eyes -->
+      <circle cx="268" cy="270" r="18" fill="#1e293b"/>
+      <circle cx="332" cy="270" r="18" fill="#1e293b"/>
+      <circle cx="272" cy="266" r="7" fill="#ffffff"/>
+      <circle cx="336" cy="266" r="7" fill="#ffffff"/>
+      <!-- Beak -->
+      <polygon points="300,295 285,315 315,315" fill="#fb923c"/>
+      <!-- Scarf -->
+      <path d="M235 370 Q300 395 365 370" stroke="${scarf[0]}" stroke-width="22" fill="none" stroke-linecap="round"/>
+      <path d="M340 380 Q360 420 350 450" stroke="${scarf[0]}" stroke-width="18" fill="none" stroke-linecap="round"/>
+      <!-- Feet -->
+      <ellipse cx="255" cy="480" rx="30" ry="15" fill="#fb923c"/>
+      <ellipse cx="345" cy="480" rx="30" ry="15" fill="#fb923c"/>
+      <!-- Wings -->
+      <ellipse cx="185" cy="360" rx="25" ry="65" fill="#1e293b" transform="rotate(15 185 360)"/>
+      <ellipse cx="415" cy="360" rx="25" ry="65" fill="#1e293b" transform="rotate(-15 415 360)"/>
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#0f172a" opacity="0.65">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题3: 可爱独角兽
+function makeCuteUnicornSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 13579 + n * 789) * 10000;
+    return x - Math.floor(x);
+  };
+  const bg = ['#fce7f3', '#fdf2f8', '#fff1f2'][Math.floor(rand(1) * 3)];
+  const body = ['#e9d5ff', '#ddd6fe', '#c4b5fd'][Math.floor(rand(2) * 3)];
+  const mane = ['#f9a8d4', '#f472b6', '#ec4899'][Math.floor(rand(3) * 3)];
+  const tail = ['#a78bfa', '#8b5cf6', '#7c3aed'][Math.floor(rand(4) * 3)];
+  const stars = Array.from({ length: 20 }).map((_, i) => {
+    const x = 40 + Math.floor(rand(10 + i) * 520);
+    const y = 40 + Math.floor(rand(20 + i) * 400);
+    const r = 2 + Math.floor(rand(30 + i) * 4);
+    const o = 0.3 + rand(40 + i) * 0.5;
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff" opacity="${o.toFixed(2)}"/>`;
+  }).join('');
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <linearGradient id="magic" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${bg[0]}"/>
+        <stop offset="100%" stop-color="${bg[2]}"/>
+      </linearGradient>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.15"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="url(#magic)"/>
+    ${stars}
+    <g filter="url(#shadow)">
+      <!-- Body -->
+      <ellipse cx="300" cy="360" rx="120" ry="80" fill="${body[0]}"/>
+      <!-- Legs -->
+      <rect x="220" y="410" width="28" height="90" rx="14" fill="${body[1]}"/>
+      <rect x="352" y="410" width="28" height="90" rx="14" fill="${body[1]}"/>
+      <!-- Neck and Head -->
+      <path d="M380 320 Q430 260 420 190 Q400 160 360 180 Q340 220 350 280" fill="${body[0]}"/>
+      <!-- Horn -->
+      <polygon points="420,175 410,130 432,165" fill="#fde68a"/>
+      <polygon points="415,155 410,130 425,148" fill="#fef3c7"/>
+      <!-- Mane -->
+      <path d="M360 185 Q340 200 345 230 Q335 250 340 280 Q330 300 338 320" stroke="${mane[0]}" stroke-width="18" fill="none" stroke-linecap="round"/>
+      <!-- Eye -->
+      <circle cx="390" cy="205" r="14" fill="#1f2937"/>
+      <circle cx="393" cy="201" r="5" fill="#ffffff"/>
+      <!-- Tail -->
+      <path d="M180 360 Q140 340 130 380 Q145 410 175 390" fill="${tail[0]}"/>
+      <path d="M175 365 Q145 355 140 385 Q152 405 172 388" fill="${tail[1]}"/>
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#0f172a" opacity="0.65">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题4: 可爱蛋糕
+function makeCuteCakeSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 24680 + n * 246) * 10000;
+    return x - Math.floor(x);
+  };
+  const bg = ['#fef3c7', '#fee2e2', '#fce7f3'][Math.floor(rand(1) * 3)];
+  const cake = ['#fb7185', '#f472b6', '#a78bfa', '#60a5fa'][Math.floor(rand(2) * 4)];
+  const cream = ['#fef3c7', '#fffbeb', '#fef9c3'][Math.floor(rand(3) * 3)];
+  const cherry = ['#ef4444', '#dc2626', '#f87171'][Math.floor(rand(4) * 3)];
+  const candles = Array.from({ length: 5 + Math.floor(rand(5) * 4) }).map((_, i) => {
+    const x = 210 + i * 45;
+    const h = 35 + Math.floor(rand(10 + i) * 25);
+    const colors = ['#fbbf24', '#60a5fa', '#34d399', '#f472b6', '#a78bfa'];
+    const c = colors[i % colors.length];
+    return `
+      <rect x="${x}" y="${260 - h}" width="10" height="${h}" rx="5" fill="${c}"/>
+      <ellipse cx="${x + 5}" cy="${260 - h - 8}" rx="6" ry="10" fill="#facc15" opacity="0.9"/>
+    `;
+  }).join('');
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.15"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="${bg[0]}"/>
+    <g filter="url(#shadow)">
+      <!-- Plate -->
+      <ellipse cx="300" cy="470" rx="160" ry="30" fill="#e5e7eb"/>
+      <ellipse cx="300" cy="465" rx="145" ry="25" fill="#f3f4f6"/>
+      <!-- Cake base -->
+      <rect x="160" y="340" width="280" height="125" rx="15" fill="${cake[0]}"/>
+      <rect x="155" y="335" width="290" height="20" rx="10" fill="${cream[0]}"/>
+      <!-- Drips -->
+      ${Array.from({ length: 12 }).map((_, i) => {
+        const x = 165 + i * 24;
+        const h = 15 + Math.floor(rand(20 + i) * 20);
+        return `<path d="M${x} 355 Q${x} ${355 + h} ${x + 8} ${355 + h}" fill="${cream[0]}" opacity="0.9"/>`;
+      }).join('')}
+      <!-- Middle layer -->
+      <rect x="175" y="270" width="250" height="70" rx="12" fill="${cake[Math.floor(rand(21) * cake.length)]}"/>
+      <rect x="170" y="265" width="260" height="18" rx="9" fill="${cream[1]}"/>
+      <!-- Candles -->
+      ${candles}
+      <!-- Cherries on top -->
+      ${Array.from({ length: 3 }).map((_, i) => {
+        const x = 230 + i * 70;
+        return `
+          <circle cx="${x}" cy="248" r="14" fill="${cherry[i % cherry.length]}"/>
+          <path d="M${x} 236 Q${x + 5} 220 ${x + 15} 225" stroke="#16a34a" stroke-width="3" fill="none"/>
+        `;
+      }).join('')}
+      <!-- Sprinkles -->
+      ${Array.from({ length: 25 }).map((_, i) => {
+        const x = 170 + Math.floor(rand(30 + i) * 260);
+        const y = 275 + Math.floor(rand(31 + i) * 55);
+        const colors = ['#fbbf24', '#60a5fa', '#34d399', '#f472b6'];
+        const c = colors[Math.floor(rand(32 + i) * colors.length)];
+        const rot = Math.floor(rand(33 + i) * 360);
+        return `<rect x="${x}" y="${y}" width="12" height="5" rx="2.5" fill="${c}" transform="rotate(${rot} ${x} ${y})"/>`;
+      }).join('')}
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#0f172a" opacity="0.65">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题5: 可爱城堡
+function makeCuteCastleSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 11223 + n * 445) * 10000;
+    return x - Math.floor(x);
+  };
+  const sky = ['#dbeafe', '#e0e7ff', '#cffafe'][Math.floor(rand(1) * 3)];
+  const castle = ['#f3f4f6', '#e5e7eb', '#d1d5db'][Math.floor(rand(2) * 3)];
+  const roof = ['#ef4444', '#dc2626', '#f87171'][Math.floor(rand(3) * 3)];
+  const flag = ['#fbbf24', '#60a5fa', '#34d399'][Math.floor(rand(4) * 3)];
+  const clouds = Array.from({ length: 6 }).map((_, i) => {
+    const x = 50 + Math.floor(rand(10 + i) * 500);
+    const y = 80 + Math.floor(rand(20 + i) * 120);
+    return `
+      <ellipse cx="${x}" cy="${y}" rx="50" ry="25" fill="white" opacity="0.7"/>
+      <ellipse cx="${x + 35}" cy="${y + 5}" rx="40" ry="22" fill="white" opacity="0.7"/>
+      <ellipse cx="${x - 30}" cy="${y + 5}" rx="35" ry="20" fill="white" opacity="0.7"/>
+    `;
+  }).join('');
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.15"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="${sky[0]}"/>
+    ${clouds}
+    <!-- Ground -->
+    <rect x="0" y="480" width="600" height="120" fill="#86efac" opacity="0.5"/>
+    <g filter="url(#shadow)">
+      <!-- Main tower -->
+      <rect x="220" y="250" width="160" height="230" fill="${castle[0]}"/>
+      <polygon points="220,250 300,170 380,250" fill="${roof[0]}"/>
+      <rect x="290" y="140" width="20" height="40" fill="${castle[1]}"/>
+      <polygon points="290,140 300,115 310,140" fill="${flag[0]}"/>
+      <!-- Left tower -->
+      <rect x="140" y="320" width="80" height="160" fill="${castle[1]}"/>
+      <polygon points="140,320 180,260 220,320" fill="${roof[1]}"/>
+      <rect x="170" y="240" width="12" height="30" fill="${castle[2]}"/>
+      <polygon points="170,240 176,220 182,240" fill="${flag[1]}"/>
+      <!-- Right tower -->
+      <rect x="380" y="320" width="80" height="160" fill="${castle[1]}"/>
+      <polygon points="380,320 420,260 460,320" fill="${roof[1]}"/>
+      <rect x="410" y="240" width="12" height="30" fill="${castle[2]}"/>
+      <polygon points="410,240 416,220 422,240" fill="${flag[2]}"/>
+      <!-- Door -->
+      <path d="M270 480 L270 400 Q300 370 330 400 L330 480 Z" fill="#92400e"/>
+      <circle cx="310" cy="445" r="6" fill="#fbbf24"/>
+      <!-- Windows -->
+      <circle cx="300" cy="310" r="22" fill="#93c5fd" opacity="0.8"/>
+      <line x1="300" y1="288" x2="300" y2="332" stroke="${castle[0]}" stroke-width="4"/>
+      <line x1="278" y1="310" x2="322" y2="310" stroke="${castle[0]}" stroke-width="4"/>
+      <circle cx="180" cy="370" r="14" fill="#93c5fd" opacity="0.8"/>
+      <circle cx="420" cy="370" r="14" fill="#93c5bd" opacity="0.8"/>
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#0f172a" opacity="0.65">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题6: 可热气球
+function makeCuteHotAirBalloonSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 33445 + n * 667) * 10000;
+    return x - Math.floor(x);
+  };
+  const sky = ['#fef3c7', '#fed7aa', '#fecaca'][Math.floor(rand(1) * 3)];
+  const balloon = ['#fb7185', '#f472b6', '#a78bfa', '#60a5fa', '#34d399'][Math.floor(rand(2) * 5)];
+  const balloon2 = ['#f97316', '#f59e0b', '#eab308', '#84cc16', '#06b6d4'][Math.floor(rand(3) * 5)];
+  const basket = ['#92400e', '#78350f', '#713f12'][Math.floor(rand(4) * 3)];
+  const clouds = Array.from({ length: 5 }).map((_, i) => {
+    const x = 30 + Math.floor(rand(10 + i) * 540);
+    const y = 100 + Math.floor(rand(20 + i) * 150);
+    return `
+      <ellipse cx="${x}" cy="${y}" rx="55" ry="28" fill="white" opacity="0.6"/>
+      <ellipse cx="${x + 40}" cy="${y + 6}" rx="42" ry="24" fill="white" opacity="0.6"/>
+      <ellipse cx="${x - 35}" cy="${y + 6}" rx="38" ry="21" fill="white" opacity="0.6"/>
+    `;
+  }).join('');
+  const stripes = Array.from({ length: 8 }).map((_, i) => {
+    const color = i % 2 === 0 ? balloon[i % balloon.length] : balloon2[i % balloon2.length];
+    return `<path d="M${220 + i * 20} 200 Q${220 + i * 20 + 10} 280 ${260 + i * 15} 340 Q${240 + i * 15} 280 ${240 + i * 20} 200Z" fill="${color}" opacity="0.9"/>`;
+  }).join('');
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.15"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="${sky[0]}"/>
+    ${clouds}
+    <g filter="url(#shadow)" transform="translate(0, 20)">
+      <!-- Balloon envelope -->
+      <path d="M220 200 Q220 120 300 100 Q380 120 380 200 Q380 300 340 350 Q300 370 260 350 Q220 300 220 200Z" fill="${balloon[0]}" opacity="0.3"/>
+      ${stripes}
+      <!-- Basket ropes -->
+      <line x1="260" y1="350" x2="270" y2="420" stroke="#78350f" stroke-width="3"/>
+      <line x1="340" y1="350" x2="330" y2="420" stroke="#78350f" stroke-width="3"/>
+      <line x1="300" y1="362" x2="300" y2="420" stroke="#78350f" stroke-width="3"/>
+      <!-- Basket -->
+      <rect x="265" y="420" width="70" height="50" rx="8" fill="${basket[0]}"/>
+      <line x1="270" y1="435" x2="330" y2="435" stroke="${basket[1]}" stroke-width="2"/>
+      <line x1="270" y1="450" x2="330" y2="450" stroke="${basket[1]}" stroke-width="2"/>
+      <!-- Burner flame -->
+      <path d="M295 415 Q300 395 305 415 Q300 420 295 415Z" fill="#f97316" opacity="0.9"/>
+      <path d="M297 412 Q300 400 303 412 Q300 415 297 412Z" fill="#fbbf24"/>
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#0f172a" opacity="0.65">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题7: 可爱猫咪
+function makeCuteCatSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 55667 + n * 889) * 10000;
+    return x - Math.floor(x);
+  };
+  const bg = ['#fef3c7', '#fce7f3', '#e0e7ff'][Math.floor(rand(1) * 3)];
+  const fur = ['#fbbf24', '#fb923c', '#f97316', '#d97706'][Math.floor(rand(2) * 4)];
+  const eyes = ['#22c55e', '#059669', '#047857'][Math.floor(rand(3) * 3)];
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <linearGradient id="catbg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${bg[0]}"/>
+        <stop offset="100%" stop-color="${bg[2]}"/>
+      </linearGradient>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.15"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="url(#catbg)"/>
+    <g filter="url(#shadow)">
+      <!-- Ears -->
+      <path d="M195 220 L165 140 Q185 135 205 180Z" fill="${fur[0]}"/>
+      <path d="M405 220 L435 140 Q415 135 395 180Z" fill="${fur[0]}"/>
+      <path d="M198 210 L178 155 Q192 152 204 185Z" fill="#ffffff" opacity="0.3"/>
+      <path d="M402 210 L422 155 Q408 152 396 185Z" fill="#ffffff" opacity="0.3"/>
+      <!-- Face -->
+      <ellipse cx="300" cy="330" rx="145" ry="125" fill="${fur[0]}"/>
+      <!-- Eyes -->
+      <ellipse cx="245" cy="295" rx="28" ry="35" fill="${eyes[0]}"/>
+      <ellipse cx="355" cy="295" rx="28" ry="35" fill="${eyes[0]}"/>
+      <ellipse cx="245" cy="290" rx="12" ry="18" fill="#000000"/>
+      <ellipse cx="355" cy="290" rx="12" ry="18" fill="#000000"/>
+      <circle cx="249" cy="284" r="6" fill="#ffffff"/>
+      <circle cx="359" cy="284" r="6" fill="#ffffff"/>
+      <!-- Nose -->
+      <polygon points="300,340 290,355 310,355" fill="#fb7185"/>
+      <!-- Mouth -->
+      <path d="M300 355 L285 372 M300 355 L315 372" stroke="#000000" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- Whiskers -->
+      <line x1="180" y1="330" x2="230" y2="340" stroke="#000000" stroke-width="2" opacity="0.4"/>
+      <line x1="175" y1="350" x2="228" y2="352" stroke="#000000" stroke-width="2" opacity="0.4"/>
+      <line x1="420" y1="330" x2="370" y2="340" stroke="#000000" stroke-width="2" opacity="0.4"/>
+      <line x1="425" y1="350" x2="372" y2="352" stroke="#000000" stroke-width="2" opacity="0.4"/>
+      <!-- Body -->
+      <ellipse cx="300" cy="470" rx="130" ry="80" fill="${fur[1] || fur[0]}"/>
+      <!-- Stripes on forehead -->
+      <path d="M285 230 L290 260 M300 225 L300 258 M315 230 L310 260" stroke="${fur[2] || fur[0]}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+      <!-- Tail -->
+      <path d="M430 470 Q480 440 470 390 Q465 360 445 365" stroke="${fur[0]}" stroke-width="25" fill="none" stroke-linecap="round"/>
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#0f172a" opacity="0.65">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题8: 可爱冰淇淋
+function makeCuteIceCreamSundaeSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 77889 + n * 223) * 10000;
+    return x - Math.floor(x);
+  };
+  const bg = ['#fef3c7', '#fce7f3', '#e0f2fe'][Math.floor(rand(1) * 3)];
+  const flavors = [
+    { main: '#fb7185', light: '#fecdd3' },
+    { main: '#a78bfa', light: '#ede9fe' },
+    { main: '#60a5fa', light: '#bfdbfe' },
+    { main: '#34d399', light: '#bbf7d0' },
+    { main: '#fbbf24', light: '#fef9c3' },
+  ];
+  const f1 = flavors[Math.floor(rand(2) * flavors.length)];
+  const f2 = flavors[Math.floor(rand(3) * flavors.length)];
+  const f3 = flavors[Math.floor(rand(4) * flavors.length)];
+  const toppings = ['#fbbf24', '#fb7185', '#22c55e', '#a78bfa'];
+  const sprinkles = Array.from({ length: 20 }).map((_, i) => {
+    const x = 200 + Math.floor(rand(10 + i) * 200);
+    const y = 220 + Math.floor(rand(20 + i) * 120);
+    const c = toppings[Math.floor(rand(30 + i) * toppings.length)];
+    const angle = Math.floor(rand(31 + i) * 360);
+    return `<rect x="${x}" y="${y}" width="10" height="4" rx="2" fill="${c}" transform="rotate(${angle} ${x} ${y})"/>`;
+  }).join('');
+  const cherry = `
+    <circle cx="300" cy="185" r="18" fill="#ef4444"/>
+    <circle cx="296" cy="179" r="6" fill="#fca5a5"/>
+    <path d="M300 167 Q315 150 325 160" stroke="#16a34a" stroke-width="4" fill="none" stroke-linecap="round"/>
+  `;
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.12"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="${bg[0]}"/>
+    <g filter="url(#shadow)">
+      <!-- Bowl -->
+      <path d="M200 380 Q200 480 300 480 Q400 480 400 380Z" fill="#d4d4d8"/>
+      <ellipse cx="300" cy="380" rx="100" ry="25" fill="#e4e4e7"/>
+      <!-- Ice cream scoops -->
+      <circle cx="260" cy="320" r="65" fill="${f1.main}"/>
+      <circle cx="340" cy="320" r="65" fill="${f2.main}"/>
+      <circle cx="300" cy="260" r="62" fill="${f3.main}"/>
+      <!-- Highlights -->
+      <circle cx="235" cy="295" r="18" fill="white" opacity="0.35"/>
+      <circle cx="315" cy="295" r="18" fill="white" opacity="0.35"/>
+      <circle cx="275" cy="238" r="16" fill="white" opacity="0.35"/>
+      <!-- Dripping ice cream -->
+      <path d="M215 365 Q210 390 222 395Q218 375 228 368" fill="${f1.light}" opacity="0.8"/>
+      <path d="M385 365 Q390 390 378 395Q382 375 372 368" fill="${f2.light}" opacity="0.8"/>
+      <!-- Sprinkles -->
+      ${sprinkles}
+      <!-- Cherry on top -->
+      ${cherry}
+      <!-- Wafer stick -->
+      <rect x="285" y="440" width="30" height="50" rx="5" fill="#fbbf24" transform="rotate(15 300 465)"/>
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#0f172a" opacity="0.65">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题9: 可爱太空人
+function makeCuteAstronautSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 88901 + n * 334) * 10000;
+    return x - Math.floor(x);
+  };
+  const spaceBg = ['#0f172a', '#1e293b', '#020617'][Math.floor(rand(1) * 3)];
+  const suit = ['#e2e8f0', '#f1f5f9', '#cbd5e1'][Math.floor(rand(2) * 3)];
+  const visor = ['#60a5fa', '#3b82f6', '#2563eb'][Math.floor(rand(3) * 3)];
+  const stars = Array.from({ length: 35 }).map((_, i) => {
+    const x = Math.floor(rand(10 + i) * 600);
+    const y = Math.floor(rand(20 + i) * 600);
+    const r = 1 + Math.floor(rand(30 + i) * 3);
+    const o = 0.3 + rand(40 + i) * 0.7;
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="white" opacity="${o.toFixed(2)}"/>`;
+  }).join('');
+  const planets = Array.from({ length: 2 }).map((_, i) => {
+    const x = 80 + i * 420;
+    const y = 100 + Math.floor(rand(50 + i) * 150);
+    const r = 25 + Math.floor(rand(51 + i) * 30);
+    const colors = ['#fb7185', '#f59e0b', '#a78bfa', '#34d399'];
+    const c = colors[Math.floor(r % colors.length)];
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" opacity="0.6"/>`;
+  }).join('');
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <radialGradient id="spaceglow" cx="50%" cy="30%" r="70%">
+        <stop offset="0%" stop-color="${visor[0]}" stop-opacity="0.08"/>
+        <stop offset="100%" stop-color="${visor[0]}" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity="0.3"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="${spaceBg[0]}"/>
+    ${stars}
+    ${planets}
+    <circle cx="300" cy="280" r="220" fill="url(#spaceglow)"/>
+    <g filter="url(#shadow)">
+      <!-- Backpack -->
+      <rect x="210" y="330" width="180" height="120" rx="20" fill="${suit[1]}"/>
+      <rect x="225" y="345" width="150" height="90" rx="12" fill="${suit[0]}" opacity="0.5"/>
+      <!-- Helmet -->
+      <circle cx="300" cy="250" r="95" fill="${suit[0]}"/>
+      <circle cx="300" cy="250" r="75" fill="${visor[0]}"/>
+      <circle cx="300" cy="250" r="65" fill="#0ea5e9" opacity="0.4"/>
+      <!-- Visor reflection -->
+      <ellipse cx="275" cy="225" rx="25" ry="18" fill="white" opacity="0.25" transform="rotate(-20 275 225)"/>
+      <!-- Body suit -->
+      <ellipse cx="300" cy="390" rx="90" ry="100" fill="${suit[0]}"/>
+      <!-- Control panel -->
+      <rect x="265" y="360" width="70" height="50" rx="8" fill="${suit[2]}"/>
+      <circle cx="280" cy="375" r="6" fill="#22c55e"/>
+      <circle cx="300" cy="375" r="6" fill="#fbbf24"/>
+      <circle cx="320" cy="375" r="6" fill="#ef4444"/>
+      <rect x="275" y="390" width="50" height="8" rx="4" fill="#94a3b8"/>
+      <!-- Arms -->
+      <ellipse cx="195" cy="380" rx="28" ry="55" fill="${suit[1]}" transform="rotate(20 195 380)"/>
+      <ellipse cx="405" cy="380" rx="28" ry="55" fill="${suit[1]}" transform="rotate(-20 405 380)"/>
+      <!-- Gloves -->
+      <circle cx="178" cy="418" r="22" fill="#ffffff" opacity="0.9"/>
+      <circle cx="422" cy="418" r="22" fill="#ffffff" opacity="0.9"/>
+      <!-- Legs -->
+      <ellipse cx="265" cy="485" rx="30" ry="45" fill="${suit[1]}"/>
+      <ellipse cx="335" cy="485" rx="30" ry="45" fill="${suit[1]}"/>
+      <!-- Boots -->
+      <ellipse cx="265" cy="522" rx="35" ry="22" fill="#1f2937"/>
+      <ellipse cx="335" cy="522" rx="35" ry="22" fill="#1f2937"/>
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#ffffff" opacity="0.85">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题10: 可爱蘑菇屋
+function makeCuteMushroomHouseSvg(seed: number) {
+  const rand = (n: number) => {
+    const x = Math.sin(seed * 99011 + n * 556) * 10000;
+    return x - Math.floor(x);
+  };
+  const sky = ['#dcfce7', '#fef9c3', '#e0e7ff'][Math.floor(rand(1) * 3)];
+  const cap = ['#fb7185', '#f472b6', '#ef4444'][Math.floor(rand(2) * 3)];
+  const house = ['#fef3c7', '#fffbeb', '#fde68a'][Math.floor(rand(3) * 3)];
+  const door = ['#92400e', '#78350f', '#713f12'][Math.floor(rand(4) * 3)];
+  const grass = Array.from({ length: 15 }).map((_, i) => {
+    const x = 50 + Math.floor(rand(10 + i) * 500);
+    const h = 15 + Math.floor(rand(20 + i) * 25);
+    return `<path d="M${x} 480 L${x - 5} ${480 - h} L${x + 5} ${480 - h}Z" fill="#22c55e" opacity="0.7"/>`;
+  }).join('');
+  const spots = Array.from({ length: 8 }).map((_, i) => {
+    const angle = (i / 8) * Math.PI * 2 + 0.3;
+    const dist = 60 + Math.floor(rand(10 + i) * 50);
+    const x = 300 + Math.cos(angle) * dist;
+    const y = 220 + Math.sin(angle) * dist * 0.6;
+    const r = 12 + Math.floor(rand(20 + i) * 15);
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="white" opacity="0.85"/>`;
+  }).join('');
+  const window = `
+    <circle cx="230" cy="380" r="22" fill="#93c5fd" opacity="0.85"/>
+    <line x1="230" y1="358" x2="230" y2="402" stroke="${house[0]}" stroke-width="4"/>
+    <line x1="208" y1="380" x2="252" y2="380" stroke="${house[0]}" stroke-width="4"/>
+    <circle cx="370" cy="380" r="22" fill="#93c5fd" opacity="0.85"/>
+    <line x1="370" y1="358" x2="370" y2="402" stroke="${house[0]}" stroke-width="4"/>
+    <line x1="348" y1="380" x2="392" y2="380" stroke="${house[0]}" stroke-width="4"/>
+  `;
+  const chimney = `
+    <rect x="340" y="220" width="30" height="70" rx="5" fill="${cap[0]}"/>
+    <ellipse cx="355" cy="215" rx="22" ry="10" fill="#fca5a5" opacity="0.6"/>
+    <path d="M348 210 Q355 195 362 210" fill="none" stroke="#d1d5db" stroke-width="3" opacity="0.5"/>
+  `;
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+    <defs>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.12"/>
+      </filter>
+    </defs>
+    <rect width="600" height="600" rx="54" fill="${sky[0]}"/>
+    <!-- Sun -->
+    <circle cx="500" cy="100" r="45" fill="#fbbf24" opacity="0.9"/>
+    ${Array.from({ length: 12 }).map((_, i) => {
+      const angle = (i / 12) * Math.PI * 2;
+      const x1 = 500 + Math.cos(angle) * 55;
+      const y1 = 100 + Math.sin(angle) * 55;
+      const x2 = 500 + Math.cos(angle) * 72;
+      const y2 = 100 + Math.sin(angle) * 72;
+      return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>`;
+    }).join('')}
+    <!-- Ground -->
+    <rect x="0" y="470" width="600" height="130" fill="#86efac" opacity="0.5"/>
+    ${grass}
+    <g filter="url(#shadow)">
+      <!-- House body -->
+      <rect x="190" y="310" width="220" height="170" rx="15" fill="${house[0]}"/>
+      <!-- Mushroom cap -->
+      <path d="M140 310 Q300 120 460 310Z" fill="${cap[0]}"/>
+      ${spots}
+      <!-- Door -->
+      <path d="M270 480 L270 400 Q300 370 330 400 L330 480Z" fill="${door[0]}"/>
+      <circle cx="315" cy="442" r="6" fill="#fbbf24"/>
+      ${window}
+      ${chimney}
+      <!-- Fence -->
+      ${Array.from({ length: 6 }).map((_, i) => {
+        const x = 120 + i * 65;
+        return `
+          <rect x="${x}" y="445" width="12" height="30" rx="3" fill="#fbbf24" opacity="0.8"/>
+          <rect x="${x - 8}" y="455" width="28" height="6" rx="2" fill="#fbbf24" opacity="0.8"/>
+        `;
+      }).join('')}
+      <!-- Path -->
+      <path d="M270 480 Q300 510 330 480L340 530L260 530Z" fill="#d4d4d8" opacity="0.6"/>
+    </g>
+    <text x="300" y="560" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system" font-size="34" font-weight="900" fill="#0f172a" opacity="0.65">第 ${seed} 关</text>
+  </svg>`;
+  return encodeSvgDataUri(svg);
+}
+
+// 新增主题11-20: 更多多样化主题
+function makeCuteWhaleSvg(seed: number) {
+  const rand = (n: number) => { const x = Math.sin(seed * 22334 + n * 667) * 10000; return x - Math.floor(x); };
+  const sea = ['#0ea5e9', '#0284c7', '#0369a1'][Math.floor(rand(1) * 3)];
+  const whale = ['#60a5fa', '#3b82f6', '#2563eb'][Math.floor(rand(2) * 3)];
+  return encodeSvgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><defs><linearGradient id="ocean" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${sea[0]}"/><stop offset="100%" stop-color="${sea[2]}"/></linearGradient></defs><rect width="600" height="600" rx="54" fill="url(#ocean)"/><g><ellipse cx="280" cy="320" rx="160" ry="95" fill="${whale[0]}"/><circle cx="210" cy="295" r="18" fill="#1f293b"/><ellipse cx="195" cy="325" rx="20" ry="14" fill="#fb7185" opacity="0.35"/></g><text x="300" y="560" text-anchor="middle" font-size="34" font-weight="900" fill="#fff" opacity="0.85">第 ${seed} 关</text></svg>`);
+}
+
+function makeCuteButterflyGardenSvg(seed: number) {
+  const rand = (n: number) => { const x = Math.sin(seed * 44556 + n * 889) * 10000; return x - Math.floor(x); };
+  const bg = ['#fef3c7', '#fce7f3'][Math.floor(rand(1) * 2)];
+  const wc = ['#fb7185', '#a78bfa', '#60a5fa'];
+  const w1 = wc[Math.floor(rand(2) * 3)], w2 = wc[Math.floor(rand(3) * 3)];
+  return encodeSvgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" rx="54" fill="${bg[0]}"/><g transform="translate(0,-30)"><path d="M300 260 Q220 180 170 220 Q140 260 180 300 Q220 320 300 275Z" fill="${w1}" opacity="0.9"/><path d="M300 260 Q380 180 430 220 Q460 260 420 300 Q380 320 300 275Z" fill="${w1}" opacity="0.9"/><path d="M300 280 Q230 320 190 370 Q200 410 250 395 Q285 370 300 290Z" fill="${w2}" opacity="0.85"/><path d="M300 280 Q370 320 410 370 Q400 410 350 395 Q315 370 300 290Z" fill="${w2}" opacity="0.85"/><ellipse cx="300" cy="290" rx="14" ry="75" fill="#374151"/></g><text x="300" y="560" text-anchor="middle" font-size="34" font-weight="900">第 ${seed} 关</text></svg>`);
+}
+
+function makeCuteMoonNightSvg(seed: number) {
+  const rand = (n: number) => { const x = Math.sin(seed * 88899 + n * 444) * 10000; return x - Math.floor(x); };
+  const nightBg = ['#0f172a', '#1e1b4b'][Math.floor(rand(1) * 2)];
+  const moonFace = ['#fef3c7', '#fde68a'][Math.floor(rand(2) * 2)];
+  return encodeSvgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" rx="54" fill="${nightBg[0]}"/><g><circle cx="300" cy="250" r="120" fill="${moonFace[0]}"/><circle cx="260" cy="220" r="18" fill="#1f2937"/><circle cx="340" cy="220" r="18" fill="#1f2937"/></g><text x="300" y="560" text-anchor="middle" font-size="34" font-weight="900" fill="#fff" opacity="0.85">第 ${seed} 关</text></svg>`);
+}
+
+function makeCuteHeartsSvg(seed: number) {
+  const rand = (n: number) => { const x = Math.sin(seed * 33333 + n * 777) * 10000; return x - Math.floor(x); };
+  const bg = ['#fce7f3', '#fdf2f8'][Math.floor(rand(1) * 2)];
+  const hc = ['#ef4444', '#fb7185', '#f472b6'];
+  return encodeSvgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" rx="54" fill="${bg[0]}"/><g transform="translate(300,280) scale(2)"><path d="M0 -10 C-15 -25 -30 -10 -30 5 C-30 20 0 40 0 45 C0 40 30 20 30 5 C30 -10 15 -25 0 -10Z" fill="${hc[Math.floor(rand(2) * 3)]}" opacity="0.9"/></g><text x="300" y="560" text-anchor="middle" font-size="34" font-weight="900">第 ${seed} 关</text></svg>`);
+}
+
+function makeCuteStarSvg(seed: number) {
+  const rand = (n: number) => { const x = Math.sin(seed * 55555 + n * 222) * 10000; return x - Math.floor(x); };
+  const bg = ['#fef3c7', '#e0f2fe', '#dcfce7'][Math.floor(rand(1) * 3)];
+  const starColor = ['#fbbf24', '#fb923c', '#f59e0b'][Math.floor(rand(2) * 3)];
+  return encodeSvgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" rx="54" fill="${bg[0]}"/><g filter="url(#shadow)" transform="translate(300,280)"><polygon points="0,-120 28,-38 115,-35 48,18 68,105 0,65 -68,105 -52,18 -115,-35 -28,-38" fill="${starColor[0]}" opacity="0.95"/><polygon points="0,-90 21,-28 86,-26 36,14 51,79 0,49 -51,79 -39,14 -86,-26 -21,-28" fill="#fff" opacity="0.25"/></g><text x="300" y="560" text-anchor="middle" font-size="34" font-weight="900">第 ${seed} 关</text></svg>`);
+}
+
+function makeCuteCloudSvg(seed: number) {
+  const rand = (n: number) => { const x = Math.sin(seed * 77777 + n * 555) * 10000; return x - Math.floor(x); };
+  const sky = ['#dbeafe', '#e0f2fe', '#cffafe'][Math.floor(rand(1) * 3)];
+  return encodeSvgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" rx="54" fill="${sky[0]}"/><g><ellipse cx="240" cy="280" rx="80" ry="55" fill="#fff" opacity="0.95"/><ellipse cx="310" cy="260" rx="90" ry="62" fill="#fff" opacity="0.95"/><ellipse cx="380" cy="285" rx="75" ry="52" fill="#fff" opacity="0.95"/><ellipse cx="270" cy="305" rx="100" ry="50" fill="#fff" opacity="0.9"/><ellipse cx="350" cy="308" rx="85" ry="48" fill="#fff" opacity="0.9"/><ellipse cx="245" cy="268" rx="35" ry="25" fill="#fff" opacity="0.6"/><ellipse cx="365" cy="255" rx="32" ry="23" fill="#fff" opacity="0.6"/></g><text x="300" y="560" text-anchor="middle" font-size="34" font-weight="900">第 ${seed} 关</text></svg>`);
+}
+
+function makeCuteTreeSvg(seed: number) {
+  const rand = (n: number) => { const x = Math.sin(seed * 99999 + n * 333) * 10000; return x - Math.floor(x); };
+  const bg = ['#dcfce7', '#d1fae5', '#ecfdf5'][Math.floor(rand(1) * 3)];
+  const tree = ['#22c55e', '#16a34a', '#15803d'][Math.floor(rand(2) * 3)];
+  const trunk = ['#92400e', '#78350f'][Math.floor(rand(3) * 2)];
+  return encodeSvgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" rx="54" fill="${bg[0]}"/><g><rect x="275" y="360" width="50" height="130" rx="8" fill="${trunk[0]}"/><polygon points="300,140 220,280 380,280" fill="${tree[0]}" opacity="0.95"/><polygon points="300,190 235,310 365,310" fill="${tree[1]}" opacity="0.9"/><polygon points="300,240 250,340 350,340" fill="${tree[2]}" opacity="0.85"/><circle cx="280" cy="260" r="12" fill="#fb7185" opacity="0.7"/><circle cx="320" cy="280" r="10" fill="#fbbf24" opacity="0.7"/><circle cx="295" cy="295" r="8" fill="#ef4444" opacity="0.7"/></g><text x="300" y="560" text-anchor="middle" font-size="34" font-weight="900">第 ${seed} 关</text></svg>`);
+}
+
+function makeCuteFishBowlSvg(seed: number) {
+  const rand = (n: number) => { const x = Math.sin(seed * 11111 + n * 999) * 10000; return x - Math.floor(x); };
+  const bg = ['#fef3c7', '#fce7f3', '#e0f2fe'][Math.floor(rand(1) * 3)];
+  const fish = ['#fb7185', '#f59e0b', '#60a5fa'][Math.floor(rand(2) * 3)];
+  return encodeSvgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" rx="54" fill="${bg[0]}"/><g><ellipse cx="300" cy="330" rx="150" ry="125" fill="#bfdbfe" opacity="0.4" stroke="#94a3b8" stroke-width="4"/><ellipse cx="300" cy="340" rx="135" ry="110" fill="#7dd3fc" opacity="0.3"/><ellipse cx="260" cy="310" rx="50" ry="35" fill="${fish[0]}" opacity="0.9"/><polygon points="210,310 175,285 185,310 175,335" fill="${fish[0]}" opacity="0.85"/><circle cx="245" cy="302" r="7" fill="#1f2937"/><circle cx="247" cy="299" r="3" fill="#fff"/><ellipse cx="230" cy="318" rx="8" ry="5" fill="#fb7185" opacity="0.5"/><circle cx="340" cy="360" rx="25" ry="18" fill="${fish[1] || fish[0]}" opacity="0.8"/><circle cx="332" cy="355" r="5" fill="#1f2937"/><circle cx="333" cy="353" r="2" fill="#fff"/><path d="M270 400 Q285 415 300 405 Q315 415 330 400" stroke="#16a34a" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.6"/><circle cx="285" cy="395" r="10" fill="#22c55e" opacity="0.5"/><circle cx="315" cy="398" r="8" fill="#22c55e" opacity="0.5"/><rect x="280" y="450" width="40" height="25" rx="5" fill="#d4d4d8"/><rect x="270" y="445" width="60" height="10" rx="5" fill="#a1a1aa"/></g><text x="300" y="560" text-anchor="middle" font-size="34" font-weight="900">第 ${seed} 关</text></svg>`);
+}
+
+function makeCuteGiftBoxSvg(seed: number) {
+  const rand = (n: number) => { const x = Math.sin(seed * 22222 + n * 888) * 10000; return x - Math.floor(x); };
+  const bg = ['#fef3c7', '#fce7f3', '#dcfce7'][Math.floor(rand(1) * 3)];
+  const box = ['#ef4444', '#3b82f6', '#22c55e', '#a78bfa'][Math.floor(rand(2) * 4)];
+  const ribbon = ['#fbbf24', '#fb7185', '#60a5fa'][Math.floor(rand(3) * 3)];
+  return encodeSvgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" rx="54" fill="${bg[0]}"/><g><rect x="170" y="280" width="260" height="200" rx="12" fill="${box[0]}" opacity="0.9"/><rect x="165" y="270" width="270" height="25" rx="8" fill="${box[0]}" opacity="0.85"/><rect x="285" y="270" width="30" height="210" fill="${ribbon[0]}" opacity="0.95"/><rect x="170" y="360" width="260" height="20" fill="${ribbon[0]}" opacity="0.9"/><path d="M300 270 C270 230 230 240 240 275 C250 290 280 280 300 270Z" fill="${ribbon[1] || ribbon[0]}" opacity="0.9"/><path d="M300 270 C330 230 370 240 360 275 C350 290 320 280 300 270Z" fill="${ribbon[1] || ribbon[0]}" opacity="0.9"/><circle cx="270" cy="250" r="8" fill="#fbbf24" opacity="0.7"/><circle cx="330" cy="245" r="6" fill="#fb7185" opacity="0.7"/><circle cx="295" cy="235" r="5" fill="#60a5fa" opacity="0.7"/><circle cx="310" cy="255" r="7" fill="#22c55e" opacity="0.7"/></g><text x="300" y="560" text-anchor="middle" font-size="34" font-weight="900">第 ${seed} 关</text></svg>`);
+}
+
+// 更新后的关卡生成函数，使用35个不同主题
 function makeLevelImage(seed: number) {
   const themes = [
+    // 原有15个主题
     makeCuteAnimalSvg,
     makeCuteRocketSvg,
     makeCuteUnderwaterSvg,
@@ -781,11 +1467,37 @@ function makeLevelImage(seed: number) {
     makeCuteTrainSvg,
     makeCuteFlowerGardenSvg,
     makeCuteBoatSvg,
+    // 新增20个主题
+    makeCutePandaSvg,
+    makeCutePenguinSvg,
+    makeCuteUnicornSvg,
+    makeCuteCakeSvg,
+    makeCuteCastleSvg,
+    makeCuteHotAirBalloonSvg,
+    makeCuteCatSvg,
+    makeCuteIceCreamSundaeSvg,
+    makeCuteAstronautSvg,
+    makeCuteMushroomHouseSvg,
+    makeCuteWhaleSvg,
+    makeCuteButterflyGardenSvg,
+    makeCuteMoonNightSvg,
+    makeCuteHeartsSvg,
+    makeCuteStarSvg,
+    makeCuteCloudSvg,
+    makeCuteTreeSvg,
+    makeCuteFishBowlSvg,
+    makeCuteGiftBoxSvg,
   ];
-  // hashed index so levels don't feel like a strict repeating cycle
-  const h = (seed * 2654435761) >>> 0;
+  // 使用更好的哈希算法确保分布均匀，50关内尽量不重复
+  const h = (seed * 2654435761 >>> 0) ^ (seed * 1449694597 >>> 0);
   const idx = h % themes.length;
-  return themes[idx](seed);
+  const themeFn = themes[idx];
+  // 防御性检查：如果主题函数不存在或不是函数，使用默认主题
+  if (typeof themeFn !== 'function') {
+    console.warn(`Theme function at index ${idx} is not a function, using fallback`);
+    return makeCuteAnimalSvg(seed);
+  }
+  return themeFn(seed);
 }
 
 function buildLevels(): LevelDef[] {
@@ -807,7 +1519,7 @@ function loadProgress(): { completed: number[]; currentLevel: number } {
     const completed = Array.isArray(parsed?.completed) ? parsed.completed : [];
     const normalized = completed
       .map((n: any) => Number(n))
-      .filter((n: number) => Number.isFinite(n) && n >= 1 && n <= TOTAL_LEVELS);
+      .filter((n: number) => Number.isFinite(n) && n >= 1 && n <= TOTAL_LEVELS) as number[];
     const currentLevel = clamp(Number(parsed?.currentLevel || 1), 1, TOTAL_LEVELS);
     return { completed: Array.from(new Set(normalized)).sort((a, b) => a - b), currentLevel };
   } catch {
@@ -898,15 +1610,19 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
   }, [levels]);
 
   const initGame = useCallback((newLevelId: number) => {
-    ensureImageLoaded(newLevelId);
-    saveProgress({ completed: loadProgress().completed, currentLevel: newLevelId });
+    // 确保关卡ID在有效范围内
+    const safeLevelId = clamp(newLevelId, 1, TOTAL_LEVELS);
+    ensureImageLoaded(safeLevelId);
+    // 立即同步保存到localStorage，防止刷新后丢失
+    saveProgress({ completed: loadProgress().completed, currentLevel: safeLevelId });
     tilesRef.current = shuffledSolvable();
     emptyRef.current = tilesRef.current.indexOf(0);
     movesRef.current = 0;
     animatingRef.current = null;
     setCompleted(false);
     tileCanvasCacheRef.current = [];
-    setTimeout(() => buildTileCache(newLevelId), 50);
+    // 延迟构建tile缓存，确保图片已加载
+    setTimeout(() => buildTileCache(safeLevelId), 100);
   }, [ensureImageLoaded]);
 
   const buildTileCache = useCallback((lvl: number) => {
@@ -1124,11 +1840,9 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
     ctx.save();
     ctx.fillStyle = 'rgba(255,255,255,0.10)';
     ctx.beginPath();
-    // @ts-expect-error roundRect supported in modern browsers
     ctx.roundRect(previewX, previewY, previewSize, previewSize, 14);
     ctx.fill();
     ctx.beginPath();
-    // @ts-expect-error roundRect supported in modern browsers
     ctx.roundRect(previewX, previewY, previewSize, previewSize, 14);
     ctx.clip();
     if (ready) {
@@ -1149,7 +1863,6 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
     ctx.strokeStyle = 'rgba(255,255,255,0.35)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    // @ts-expect-error roundRect supported in modern browsers
     ctx.roundRect(previewX, previewY, previewSize, previewSize, 14);
     ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -1161,7 +1874,6 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
     // Board background
     ctx.fillStyle = 'rgba(15,23,42,0.25)';
     ctx.beginPath();
-    // @ts-expect-error roundRect supported in modern browsers
     ctx.roundRect(gridX - 10, gridY - 10, availSize + 20, availSize + 20, 18);
     ctx.fill();
 
@@ -1193,7 +1905,6 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
           if (val === 0) {
             ctx.fillStyle = 'rgba(0,0,0,0.25)';
             ctx.beginPath();
-            // @ts-expect-error roundRect supported in modern browsers
             ctx.roundRect(drawX, drawY, w, w, 14);
             ctx.fill();
             ctx.strokeStyle = 'rgba(255,255,255,0.18)';
@@ -1218,7 +1929,6 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
 
           ctx.save();
           ctx.beginPath();
-          // @ts-expect-error roundRect supported in modern browsers
           ctx.roundRect(drawX, drawY, w, w, 14);
           ctx.clip();
 
@@ -1244,7 +1954,6 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
           ctx.strokeStyle = 'rgba(255,255,255,0.28)';
           ctx.lineWidth = 2;
           ctx.beginPath();
-          // @ts-expect-error roundRect supported in modern browsers
           ctx.roundRect(drawX, drawY, w, w, 14);
           ctx.stroke();
 
@@ -1290,7 +1999,6 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
         const sy = srcY0 + sr * srcCell;
         ctx.save();
         ctx.beginPath();
-        // @ts-expect-error roundRect supported in modern browsers
         ctx.roundRect(fx, fy, w, w, 14);
         ctx.clip();
         ctx.drawImage(img, sx, sy, srcCell, srcCell, fx, fy, w, w);
@@ -1298,7 +2006,6 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
         ctx.strokeStyle = 'rgba(255,255,255,0.28)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        // @ts-expect-error roundRect supported in modern browsers
         ctx.roundRect(fx, fy, w, w, 14);
         ctx.stroke();
       }
@@ -1311,7 +2018,6 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
       ctx.save();
       ctx.fillStyle = 'rgba(15,23,42,0.35)';
       ctx.beginPath();
-      // @ts-expect-error roundRect supported in modern browsers
       ctx.roundRect(cardX, cardY, cardW, cardH, 22);
       ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.18)';
@@ -1366,15 +2072,24 @@ export const ImageSlidePuzzleGame: React.FC<GameComponentProps> = ({ width, heig
   const goNext = useCallback(() => {
     const next = clamp(levelId + 1, 1, TOTAL_LEVELS);
     if (!isUnlocked(next)) return;
+    // 先更新状态和存储，确保同步
     setLevelId(next);
-    initGame(next);
+    // 使用setTimeout确保状态更新后再初始化游戏
+    setTimeout(() => {
+      saveProgress({ completed: loadProgress().completed, currentLevel: next });
+      initGame(next);
+    }, 0);
   }, [levelId, initGame, isUnlocked]);
 
   const selectLevel = useCallback((id: number) => {
     if (!isUnlocked(id)) return;
     setShowLevelSelect(false);
     setLevelId(id);
-    initGame(id);
+    // 确保关卡选择后立即同步
+    setTimeout(() => {
+      saveProgress({ completed: loadProgress().completed, currentLevel: id });
+      initGame(id);
+    }, 0);
   }, [initGame, isUnlocked]);
 
   const progressText = `${completedLevels.length}/${TOTAL_LEVELS}`;
