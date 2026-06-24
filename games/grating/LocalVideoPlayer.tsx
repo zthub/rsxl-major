@@ -98,6 +98,20 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
         return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
     }, [isPlaying, animate]);
 
+    // 进入全屏模式的函数
+    const enterFullscreen = () => {
+        const element = document.documentElement;
+        if (element.requestFullscreen) {
+            element.requestFullscreen().catch((err) => {
+                console.log('无法进入全屏模式:', err);
+            });
+        } else if ((element as any).webkitRequestFullscreen) {
+            (element as any).webkitRequestFullscreen();
+        } else if ((element as any).msRequestFullscreen) {
+            (element as any).msRequestFullscreen();
+        }
+    };
+
     // 处理文件选择
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -108,6 +122,8 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
             // 保存到本地存储
             localStorage.setItem('lastVideoSrc', url);
             localStorage.setItem('lastVideoFileName', file.name);
+            // 自动进入全屏
+            enterFullscreen();
         }
     };
 
@@ -128,6 +144,8 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
                 setFileName(file.name);
                 localStorage.setItem('lastVideoSrc', url);
                 localStorage.setItem('lastVideoFileName', file.name);
+                // 自动进入全屏
+                enterFullscreen();
             } catch (err) {
                 // 用户取消选择或API不支持，回退到传统方式
                 console.log('File System Access API cancelled or failed, fallback to input');
@@ -223,7 +241,7 @@ export const LocalVideoPlayer: React.FC<GameComponentProps> = ({ width, height, 
             <canvas ref={canvasRef} className="absolute inset-0 block" />
 
             {/* 2. 顶部控制栏：视力类型选择 */}
-            <div className="absolute top-4 left-4 z-20 pointer-events-none">
+            <div className="absolute top-20 left-4 z-20 pointer-events-none">
                 <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-white/90 rounded-lg shadow border border-slate-200 text-xs text-slate-700">
                     <span className="font-semibold whitespace-nowrap">视力类型</span>
                     <select
